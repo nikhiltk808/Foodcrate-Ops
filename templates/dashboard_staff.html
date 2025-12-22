@@ -127,7 +127,7 @@
     <span class="logo" style="display:none;">Zion Ops</span>
     <div style="display: flex; align-items: center; gap: 10px;">
         {% if user_role == 'manager' %}
-        <a href="/" style="text-decoration: none;">
+        <a href="{{ url_for('admin.home') }}" style="text-decoration: none;">
             <div class="user-pill" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
                 <span class="material-icons" style="font-size:16px;">admin_panel_settings</span>
                 <span>Admin</span>
