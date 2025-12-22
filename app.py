@@ -48,7 +48,7 @@ def index():
         return redirect(url_for('admin.login'))
     
     # Redirect based on user role
-    if session.get('user_role') in ['admin', 'manager']:
+    if session.get('user_role') == 'manager':
         return redirect(url_for('admin.home'))
     else:
         return redirect(url_for('staff.dashboard', route_user_id=session['user_id']))
