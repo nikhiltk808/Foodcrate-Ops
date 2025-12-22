@@ -20,6 +20,8 @@
         /* HEADER */
         .header { background: var(--card-bg); padding: 12px 20px; position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 10px rgba(0,0,0,0.03); }
         .logo-img { height: 35px; width: auto; object-fit: contain; }
+        .header-actions { display: flex; align-items: center; gap: 10px; }
+        .admin-link { text-decoration: none; background: var(--primary-light); color: var(--primary); padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 5px; }
         .user-pill { background: var(--primary-light); color: var(--primary); padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 5px; }
         .container { padding: 20px; max-width: 500px; margin: 0 auto; }
 
@@ -125,11 +127,19 @@
 <div class="header">
     <img src="/static/Foodcrate.png" alt="FoodCrate" class="logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
     <span class="logo" style="display:none;">Zion Ops</span>
-    <div class="user-pill"><span>{{ user }}</span><a href="/logout"><span class="material-icons" style="font-size:18px; color:var(--primary);">logout</span></a></div>
+    <div class="header-actions">
+        {% if user_role == 'manager' %}
+        <a href="/" class="admin-link">
+            <span class="material-icons" style="font-size:18px;">admin_panel_settings</span>
+            <span>Admin</span>
+        </a>
+        {% endif %}
+        <div class="user-pill"><span>{{ user }}</span><a href="/logout"><span class="material-icons" style="font-size:18px; color:var(--primary);">logout</span></a></div>
+    </div>
 </div>
 
 <!-- container includes data-user-id for JS to reference -->
-<div class="container" data-user-id="{{ session.user_id }}">
+<div class="container" data-user-id="{{ user_id }}">
 
     <div class="kpi-container">
         <div class="kpi-card"><span class="kpi-val text-green">{{ kpi.completed }}</span><span class="kpi-lbl">Done</span></div>
