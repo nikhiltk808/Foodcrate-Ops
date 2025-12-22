@@ -9,3 +9,4 @@ instance/
 venv/
 .virtualenv/
 zion_ops_backup_*.zip
+test_fixes.py
