@@ -128,9 +128,9 @@
     <div class="user-pill">
         <span>{{ user }}</span>
         {% if user_role == 'manager' %}
-        <a href="/" title="Admin Dashboard"><span class="material-icons" style="font-size:18px; color:var(--primary); margin-left:5px;">admin_panel_settings</span></a>
+        <a href="/" title="Admin Dashboard" aria-label="Go to Admin Dashboard"><span class="material-icons" style="font-size:18px; color:var(--primary); margin-left:5px;">admin_panel_settings</span></a>
         {% endif %}
-        <a href="/logout"><span class="material-icons" style="font-size:18px; color:var(--primary);">logout</span></a>
+        <a href="/logout" title="Logout" aria-label="Logout"><span class="material-icons" style="font-size:18px; color:var(--primary);">logout</span></a>
     </div>
 </div>
 

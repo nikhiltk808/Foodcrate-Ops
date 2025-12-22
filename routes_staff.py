@@ -62,7 +62,7 @@ def dashboard(route_user_id):
         try:
             item['lines'] = item.get('content', '').split('\n') if item.get('content') else []
             item['reporting_time'] = item.get('reporting_time', '00:00')
-        except:
+        except (AttributeError, ValueError, TypeError):
             item['lines'] = []
             item['reporting_time'] = '00:00'
         duties.append(item)
