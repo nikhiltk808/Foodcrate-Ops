@@ -3,6 +3,8 @@ nano .gitignore
 __pycache__/
 *.pyc
 *.db
+*.db-shm
+*.db-wal
 .env
 .env.*
 instance/
