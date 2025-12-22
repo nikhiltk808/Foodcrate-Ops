@@ -33,7 +33,8 @@ def dashboard(route_user_id):
     # 3. STATS & LOGS
     stats = h.calculate_shift_stats(route_user_id)
     stats['status'] = current_status
-    raw_logs = c.execute("SELECT action, timestamp FROM attendance WHERE user_id=? AND timestamp >= ? ORDER BY timestamp DESC", (route_user_id, shift_start)).fetchall()
+    shift_start_str = shift_start.strftime('%Y-%m-%d %H:%M:%S')
+    raw_logs = c.execute("SELECT action, timestamp FROM attendance WHERE user_id=? AND timestamp >= ? ORDER BY timestamp DESC", (route_user_id, shift_start_str)).fetchall()
     logs = [{'date_str': datetime.strptime(l['timestamp'][:19], '%Y-%m-%d %H:%M:%S').strftime('%d %b'),
              'time_str': datetime.strptime(l['timestamp'][:19], '%Y-%m-%d %H:%M:%S').strftime('%H:%M'),
              'action': l['action'].replace('_', ' ').title()} for l in raw_logs]
@@ -44,7 +45,10 @@ def dashboard(route_user_id):
     updates = []
     for a in active_anns:
         item = dict(a)
-        if item['meta_info']: item['meta_list'] = item['meta_info'].split('|')
+        if item.get('meta_info'):
+            item['meta_list'] = item['meta_info'].split('|')
+        else:
+            item['meta_list'] = []
         # Check read status per item
         ack = c.execute("SELECT 1 FROM acknowledgments WHERE user_id=? AND announcement_id=?", (route_user_id, item['id'])).fetchone()
         item['is_read'] = True if ack else False
@@ -56,9 +60,11 @@ def dashboard(route_user_id):
     for d in active_duties:
         item = dict(d)
         try:
-            item['lines'] = item['content'].split('\n')
+            item['lines'] = item.get('content', '').split('\n') if item.get('content') else []
             item['reporting_time'] = item.get('reporting_time', '00:00')
-        except: pass
+        except:
+            item['lines'] = []
+            item['reporting_time'] = '00:00'
         duties.append(item)
 
     # 5. TO-DOS
@@ -79,7 +85,7 @@ def dashboard(route_user_id):
     # 6. CHECKLISTS (CATEGORIZED)
     saved = {}; attempts = {}; audit = {}; durations = []
     try:
-        done = c.execute("SELECT checklist_id, task_name, timestamp FROM checklist_logs WHERE user_id=? AND timestamp >= ?", (route_user_id, shift_start)).fetchall()
+        done = c.execute("SELECT checklist_id, task_name, timestamp FROM checklist_logs WHERE user_id=? AND timestamp >= ?", (route_user_id, shift_start_str)).fetchall()
         sub_times = {}
         for l in done:
             cid = l['checklist_id']
