@@ -162,6 +162,7 @@ def dashboard(route_user_id):
     for key in task_groups: task_groups[key].sort(key=sorter)
 
     return render_template('dashboard_staff.html', theme=h.THEME, user=session['user_name'],
+                           user_role=session.get('user_role'),
                            current_status=current_status, tasks=task_groups, stats=stats,
                            kpi=kpi, current_date=today_str,
                            updates=updates, # CHANGED: Passing list
