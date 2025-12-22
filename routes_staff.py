@@ -167,7 +167,9 @@ def dashboard(route_user_id):
                            updates=updates, # CHANGED: Passing list
                            duties=duties,   # CHANGED: Passing list
                            snapshot=snapshot,
-                           todos=todos, logs=logs)
+                           todos=todos, logs=logs,
+                           route_user_id=route_user_id,
+                           user_role=session.get('user_role'))
 
 @staff_bp.route('/staff/checklist/<int:cid>')
 def view_checklist(cid):
