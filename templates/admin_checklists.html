@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checklist Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <style>
+        :root { --primary: #4361ee; --bg: #f1f5f9; --card: #ffffff; --border: #e2e8f0; --text: #0f172a; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        * { box-sizing: border-box; }
+
+        /* NAVBAR */
+        .navbar { background: var(--card); padding: 12px 25px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .logo { font-weight: 800; font-size: 18px; color: var(--primary); text-decoration: none; display: flex; align-items: center; gap: 10px; }
+        .btn-new { background: var(--primary); color: white; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(67, 97, 238, 0.3); transition: 0.2s; }
+        .btn-new:hover { transform: scale(1.1); }
+
+        /* MAIN GRID */
+        .main-grid { display: grid; grid-template-columns: 6fr 4fr; gap: 20px; padding: 20px; flex: 1; overflow: hidden; }
+
+        .col-left { display: flex; flex-direction: column; overflow: hidden; height: 100%; }
+        .col-right { display: flex; flex-direction: column; gap: 20px; height: 100%; overflow: hidden; }
+
+        /* PANELS */
+        .panel { background: var(--card); border-radius: 16px; border: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .panel-header { padding: 15px 20px; border-bottom: 1px solid var(--border); font-weight: 800; font-size: 14px; background: #fafbfc; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .panel-body { padding: 20px; overflow-y: auto; flex: 1; }
+
+        /* BUILDER STYLES */
+        .section-lbl { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; }
+        .form-input, .form-select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; margin-bottom: 15px; font-family: inherit; }
+
+        .time-group { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
+        .time-input-wrap { display: flex; align-items: center; background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 0 5px; }
+        .time-input-wrap input { border: none; background: transparent; padding: 8px; outline: none; font-family: inherit; font-size: 13px; }
+        .btn-add-time { border: 1px dashed var(--border); background: white; color: var(--primary); padding: 8px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; }
+
+        .assign-tools { display: flex; gap: 5px; margin-bottom: 8px; flex-wrap: wrap; }
+        .chip { font-size: 10px; padding: 4px 8px; border-radius: 4px; background: #eff6ff; color: var(--primary); border: 1px solid #dbeafe; cursor: pointer; font-weight: 600; }
+        .chip:hover { background: var(--primary); color: white; }
+        .chip-red { background: #fef2f2; color: #ef4444; border-color: #fee2e2; }
+        .chip-red:hover { background: #ef4444; color: white; }
+
+        .staff-grid-select { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; max-height: 150px; overflow-y: auto; border: 1px solid var(--border); padding: 10px; border-radius: 8px; margin-bottom: 20px; }
+        .staff-chk { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 5px; border-radius: 4px; transition: 0.1s; }
+        .staff-chk:hover { background: #f8fafc; }
+
+        .task-row { display: flex; gap: 8px; align-items: center; background: #ffffff; padding: 8px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 8px; cursor: grab; }
+        .task-input { flex: 1; border: none; outline: none; font-size: 13px; font-weight: 500; }
+        .icon-btn { color: #94a3b8; cursor: pointer; padding: 4px; border-radius: 4px; }
+        .icon-btn.active { color: var(--primary); background: #eff6ff; }
+        .icon-btn.delete:hover { color: #ef4444; background: #fef2f2; }
+
+        .human-preview { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 10px; border-radius: 8px; font-size: 11px; margin-bottom: 20px; line-height: 1.4; }
+
+        .btn-save { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; }
+
+        /* LIVE PERFORMANCE CARD */
+        .live-card { margin-top: 20px; background: #1e293b; color: white; padding: 20px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        .lc-header { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #94a3b8; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; letter-spacing: 1px; }
+        .lc-grid { display: flex; justify-content: space-between; align-items: center; }
+        .lc-item { text-align: center; }
+        .lc-val { font-size: 20px; font-weight: 800; display: block; margin-bottom: 4px; }
+        .lc-sub { font-size: 10px; color: #cbd5e1; font-weight: 600; text-transform: uppercase; }
+        .status-pill { padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+        .st-active { background: #dcfce7; color: #166534; } .st-future { background: #fef3c7; color: #92400e; } .st-off { background: #f1f5f9; color: #64748b; }
+
+        /* LIBRARY STYLES */
+        .filter-row { display: flex; gap: 10px; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #f1f5f9; flex-wrap: wrap; }
+        .filter-select { padding: 6px; border-radius: 6px; border: 1px solid var(--border); font-size: 11px; color: #64748b; background: white; cursor: pointer; flex: 1; }
+
+        .list-item { padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-start; transition: 0.2s; cursor: pointer; }
+        .list-item:hover { background: #f8fafc; transform: translateX(2px); }
+        .list-item.disabled { opacity: 0.6; filter: grayscale(100%); }
+
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+        .dot-green { background: #10b981; } .dot-gray { background: #cbd5e1; }
+
+        .list-title { font-weight: 700; font-size: 13px; color: #1e293b; margin-bottom: 4px; }
+        .list-meta { font-size: 11px; color: #64748b; }
+        .list-assign { font-size: 11px; color: var(--primary); margin-top: 4px; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+
+        .list-actions { display: flex; gap: 5px; align-items: center; }
+        .mini-btn { font-size: 16px; cursor: pointer; transition: 0.2s; padding: 6px; border-radius: 6px; background: #f1f5f9; color: #64748b; text-decoration: none; display: flex; align-items: center; justify-content: center; }
+        .mini-btn:hover { background: #e2e8f0; color: var(--primary); }
+        .btn-del:hover { background: #fee2e2; color: #ef4444; }
+
+        /* ANALYTICS */
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .stat-box { background: #f8fafc; border: 1px solid var(--border); padding: 15px; border-radius: 8px; text-align: center; }
+        .stat-num { font-size: 20px; font-weight: 800; color: var(--dark); }
+        .stat-lbl { font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700; }
+
+        /* PREVIEW MODAL */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .phone-mockup { background: #fff; border: 10px solid #1e293b; border-radius: 35px; width: 340px; overflow: hidden; height: 650px; box-shadow: 0 20px 40px -5px rgba(0,0,0,0.2); position: relative; }
+        .notch { width: 120px; height: 25px; background: #1e293b; position: absolute; top: 0; left: 50%; transform: translateX(-50%); border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; z-index: 10; }
+        .phone-header { background: #fff; padding: 35px 20px 15px 20px; border-bottom: 1px solid #f1f5f9; text-align: center; font-weight: 800; color: #1e293b; }
+        .phone-body { padding: 15px; background: #f8fafc; height: 100%; overflow-y: auto; }
+        .mock-card { background: white; border-radius: 12px; padding: 0; box-shadow: 0 2px 5px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 10px; }
+        .mock-summary { padding: 15px; border-bottom: 1px solid #f1f5f9; }
+        .mock-item { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: flex-start; gap: 10px; }
+        .mock-check { width: 18px; height: 18px; border: 2px solid #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <a href="/" class="logo"><span class="material-icons">arrow_back</span> Dashboard</a>
+    <button class="btn-new" onclick="resetForm()" title="Create New"><span class="material-icons">add</span></button>
+</div>
+
+<div class="main-grid">
+
+    <div class="col-left panel">
+        <div class="panel-header">
+            Checklist Builder
+            <span class="material-icons" style="cursor:pointer; color:#94a3b8;" onclick="updatePreview(); showModal()">visibility</span>
+        </div>
+        <div class="panel-body">
+            <form id="checklistForm" action="/admin/save_checklist" method="POST">
+                <input type="hidden" name="list_id" id="list_id" value="{{ checklist.id if checklist else '' }}">
+                <input type="hidden" name="tasks_json" id="tasks_json">
+
+                <div class="section-lbl">Title</div>
+                <input type="text" name="title" id="inputTitle" class="form-input" placeholder="e.g. Closing Shift" value="{{ checklist.title if checklist else '' }}" required oninput="updateHuman()">
+
+                <div class="row-group" style="display:flex; gap:15px;">
+                    <div style="flex:1;">
+                        <div class="section-lbl">Frequency</div>
+                        <select name="frequency" id="freqSelect" class="form-select" onchange="toggleWeekdays(); updateHuman()">
+                            <option value="Daily" {% if checklist and checklist.frequency == 'Daily' %}selected{% endif %}>Daily Recurring</option>
+                            <option value="Weekly" {% if checklist and 'Weekly' in checklist.frequency %}selected{% endif %}>Weekly</option>
+                            <option value="One-Time" {% if checklist and checklist.frequency == 'One-Time' %}selected{% endif %}>One-Time</option>
+                        </select>
+                    </div>
+                    <div style="flex:1; display:none;" id="daySelectDiv">
+                        <div class="section-lbl">Day</div>
+                        <select name="day_of_week" id="daySelect" class="form-select" onchange="updateHuman()">
+                            {% set current_day = checklist.frequency.split('-')[1] if checklist and 'Weekly' in checklist.frequency else 'Monday' %}
+                            {% for day in ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'] %}
+                            <option value="{{ day }}" {% if day == current_day %}selected{% endif %}>{{ day }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="section-lbl">Trigger Times (Multi)</div>
+                <div class="time-group" id="timeContainer"></div>
+                <button type="button" class="btn-add-time" onclick="addTimeInput('')">+ Add Slot</button>
+                <div style="margin-bottom:20px;"></div>
+
+                <div class="section-lbl">Assign Staff</div>
+                <div class="assign-tools">
+                    <div class="chip" onclick="selectAll()">Select All</div>
+                    <div class="chip" onclick="selectDept('Kitchen')">Kitchen</div>
+                    <div class="chip" onclick="selectDept('Service')">Service</div>
+                    <div class="chip chip-red" onclick="clearAll()">Clear</div>
+                </div>
+                <div class="staff-grid-select">
+                    {% for u in users %}
+                    <label class="staff-chk">
+                        <input type="checkbox" name="assigned_to" value="{{ u.id }}" data-dept="{{ u.department }}"
+                        {% if checklist and (checklist.assigned_to == 'all' or u.id|string in checklist.assigned_to.split(',')) %}checked{% endif %}
+                        onchange="updateHuman()">
+                        {{ u.name }}
+                    </label>
+                    {% endfor %}
+                </div>
+
+                <div class="human-preview" id="humanText"></div>
+
+                <div class="section-lbl">Tasks (Drag to reorder)</div>
+                <div id="taskList"></div>
+                <button type="button" class="btn-add-time" style="width:100%; margin-bottom:20px;" onclick="addTaskRow()">+ Add Task</button>
+
+                <button type="button" class="btn-save" onclick="submitForm()">Save Checklist</button>
+
+                {% if checklist %}
+                <div class="live-card">
+                    <div class="lc-header">Analytics for "{{ checklist.title }}"</div>
+                    <div class="lc-grid">
+                        <div class="lc-item">
+                            {% set status_cls = 'st-active' if checklist.current_status == 'ACTIVE' else 'st-future' %}
+                            <span class="status-pill {{ status_cls }}">
+                                {{ 'Active Now' if checklist.current_status == 'ACTIVE' else 'Upcoming' }}
+                            </span>
+                            <div class="lc-sub" style="margin-top:5px;">Current State</div>
+                        </div>
+                        <div class="lc-item">
+                            <span class="lc-val" style="color:#60a5fa;">{{ checklist.fill_count }} / {{ checklist.assigned_to.split(',')|length if checklist.assigned_to != 'all' else 'All' }}</span>
+                            <span class="lc-sub">Completed</span>
+                        </div>
+                        <div class="lc-item">
+                            <span class="lc-val" style="color:#f472b6;">{{ checklist.avg_completion_time }}</span>
+                            <span class="lc-sub">Avg Time</span>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <div class="col-right">
+
+        <div class="panel" style="flex:2;">
+            <div class="panel-header">Library</div>
+            <div style="padding:10px 20px;">
+                <div class="filter-row">
+                    <select id="filterDept" class="filter-select" onchange="filterLibrary()">
+                        <option value="all">All Depts</option><option value="Kitchen">Kitchen</option><option value="Service">Service</option>
+                    </select>
+                    <select id="filterStaff" class="filter-select" onchange="filterLibrary()">
+                        <option value="all">All Staff</option>
+                        {% for u in users %}<option value="{{ u.id }}">{{ u.name }}</option>{% endfor %}
+                    </select>
+                    <select id="filterSort" class="filter-select" onchange="sortLibrary()">
+                        <option value="newest">Newest</option>
+                        <option value="filled">Most Filled</option>
+                        <option value="time_asc">Time (Earliest)</option>
+                        <option value="time_desc">Time (Latest)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="panel-body" style="padding:0;" id="libraryList">
+                {% if checklists|length == 0 %}<div style="padding:20px; color:#94a3b8; text-align:center;">Empty</div>{% endif %}
+                {% for l in checklists %}
+                <div class="list-item {{ 'disabled' if l.is_active == 0 else '' }}"
+                     onclick="window.location.href='{{ url_for('admin.edit_checklist', lid=l.id) }}'"
+                     data-depts="{{ l.depts }}"
+                     data-staff="{{ l.staff_ids }}"
+                     data-filled="{{ l.total_filled }}"
+                     data-time="{{ l.trigger_time }}">
+                    <div style="flex:1;">
+                        <div class="list-title">
+                            <span class="status-dot {{ 'dot-green' if l.is_active else 'dot-gray' }}"></span>
+                            {{ l.title }}
+                        </div>
+                        <div class="list-meta">{{ l.frequency }} • {{ l.trigger_time }}</div>
+                        <div class="list-assign">
+                            <span class="material-icons" style="font-size:12px;">group</span>
+                            {% if l.assigned_to == 'all' %}All Staff{% else %}
+                                {% set ids = l.assigned_to.split(',') %}
+                                {% for uid in ids %}{{ user_map.get(uid, 'Unk') }}{% if not loop.last %}, {% endif %}{% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="list-actions" onclick="event.stopPropagation()">
+                        <span class="material-icons mini-btn" title="Preview" onclick='previewList({{ l|tojson }})'>visibility</span>
+                        <a href="/admin/toggle_checklist/{{ l.id }}" class="mini-btn btn-toggle {{ 'on' if l.is_active else '' }}"><span class="material-icons" style="font-size:16px;">power_settings_new</span></a>
+                        <a href="/admin/duplicate_checklist/{{ l.id }}" class="mini-btn btn-copy"><span class="material-icons" style="font-size:16px;">content_copy</span></a>
+                        <a href="/admin/delete_checklist/{{ l.id }}" onclick="return confirm('Delete?')" class="mini-btn btn-del"><span class="material-icons" style="font-size:16px;">delete</span></a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="panel" style="flex:1; min-height:150px;">
+            <div class="panel-header">Analytics Overview</div>
+            <div class="panel-body">
+                <div class="stat-grid">
+                    <div class="stat-box"><div class="stat-num">{{ analytics.today }}</div><div class="stat-lbl">Today's Logs</div></div>
+                    <div class="stat-box"><div class="stat-num">{{ analytics.total_submissions }}</div><div class="stat-lbl">Total Checks</div></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div id="previewModal" class="modal" onclick="closeModal(event)">
+    <div class="phone-mockup">
+        <div class="notch"></div>
+        <div class="phone-header">Preview</div>
+        <div class="phone-body">
+            <div class="mock-card">
+                <div class="mock-summary">
+                    <div style="font-weight:700; color:#1e293b;" id="prevTitle">Title</div>
+                    <div style="font-size:10px; color:#64748b; display:flex; justify-content:space-between; margin-top:5px;"><span>Due: <span id="prevTime">--:--</span></span><span>0/0</span></div>
+                    <div style="height:4px; background:#4361ee; width:0%; margin-top:8px;"></div>
+                </div>
+                <div id="prevItems"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- INIT ---
+    const existingTasks = {{ checklist.tasks|safe if checklist else '[]' }};
+    const existingTimes = "{{ checklist.trigger_time if checklist else '' }}";
+
+    function init() {
+        if (existingTasks.length > 0) { existingTasks.forEach(t => addTaskRow(typeof t==='string'?t:t.title, typeof t==='string'?false:t.is_photo)); }
+        else if (!document.getElementById('list_id').value) { addTaskRow(); }
+
+        if (existingTimes) { existingTimes.split(',').forEach(t => addTimeInput(t)); }
+        else { addTimeInput(''); }
+
+        toggleWeekdays(); updateHuman();
+        new Sortable(document.getElementById('taskList'), { animation: 150, handle: '.drag-handle' });
+    }
+
+    function toggleWeekdays() { document.getElementById('daySelectDiv').style.display = (document.getElementById('freqSelect').value === 'Weekly') ? 'block' : 'none'; }
+    function addTimeInput(val) { const div = document.createElement('div'); div.className = 'time-input-wrap'; div.innerHTML = `<input type="time" name="trigger_time[]" value="${val}" onchange="updateHuman()"><span class="material-icons" style="font-size:14px; cursor:pointer; color:#ef4444;" onclick="this.parentElement.remove(); updateHuman()">close</span>`; document.getElementById('timeContainer').appendChild(div); }
+    function addTaskRow(text="", isPhoto=false) { const div = document.createElement('div'); div.className = 'task-row'; div.innerHTML = `<span class="material-icons drag-handle" style="color:#cbd5e1; font-size:16px; cursor:grab;">drag_indicator</span><input type="text" class="task-input" value="${text}" placeholder="Task..." oninput="updatePreview()"><div class="icon-btn ${isPhoto?'active':''}" onclick="this.classList.toggle('active'); updatePreview()"><span class="material-icons" style="font-size:16px;">camera_alt</span></div><div class="icon-btn delete" onclick="this.parentElement.remove(); updatePreview()"><span class="material-icons" style="font-size:16px;">close</span></div>`; document.getElementById('taskList').appendChild(div); }
+
+    function selectAll() { document.querySelectorAll('input[name="assigned_to"]').forEach(c => c.checked = true); updateHuman(); }
+    function clearAll() { document.querySelectorAll('input[name="assigned_to"]').forEach(c => c.checked = false); updateHuman(); }
+    function selectDept(dept) { document.querySelectorAll('input[name="assigned_to"]').forEach(c => { if(c.dataset.dept === dept) c.checked = true; }); updateHuman(); }
+    function resetForm() { window.location.href = "/admin/checklists"; }
+
+    function updateHuman() {
+        const title = document.getElementById('inputTitle').value || "Checklist";
+        const freq = document.getElementById('freqSelect').value;
+        const day = document.getElementById('daySelect').value;
+        const times = Array.from(document.querySelectorAll('input[name="trigger_time[]"]')).map(i => i.value).filter(v => v).join(', ');
+        const staff = Array.from(document.querySelectorAll('input[name="assigned_to"]:checked')).map(c => c.parentElement.innerText.trim());
+        const staffText = staff.length > 0 ? staff.join(', ') : "No one yet";
+
+        let timeText = `Triggering <b>${freq}</b>`;
+        if(freq === 'Weekly') timeText += ` on <b>${day}</b>`;
+        if(times) timeText += ` at <b>${times}</b>`;
+
+        document.getElementById('humanText').innerHTML = `<div><strong>${title}</strong></div><div>${timeText}</div><div style="margin-top:5px; color:#166534; font-weight:600;">Assigned: ${staffText}</div>`;
+        document.getElementById('prevTitle').innerText = title;
+        document.getElementById('prevTime').innerText = times.split(',')[0] || '--:--';
+    }
+
+    function updatePreview() {
+        const container = document.getElementById('prevItems'); container.innerHTML = "";
+        document.querySelectorAll('.task-row').forEach(row => {
+            const txt = row.querySelector('.task-input').value;
+            if(txt) { container.innerHTML += `<div class="mock-item"><div class="mock-check"></div><div style="flex:1; font-size:12px; color:#334155;">${txt} ${row.querySelector('.active') && row.querySelector('.active').classList.contains('active') ? '<span style="font-size:10px; background:#f1f5f9; padding:2px 4px;">PHOTO</span>' : ''}</div></div>`; }
+        });
+    }
+
+    function showModal() { updatePreview(); document.getElementById('previewModal').style.display = 'flex'; }
+    function closeModal(e) { if (e.target.id === 'previewModal') document.getElementById('previewModal').style.display = 'none'; }
+
+    function previewList(data) {
+        document.getElementById('inputTitle').value = data.title;
+        const container = document.getElementById('prevItems'); container.innerHTML = "";
+        try { JSON.parse(data.tasks).forEach(t => { let txt = t.title || t; let photo = t.is_photo || false; container.innerHTML += `<div class="mock-item"><div class="mock-check"></div><div style="flex:1; font-size:12px; color:#334155;">${txt} ${photo?'<span style="font-size:10px;">PHOTO</span>':''}</div></div>`; }); } catch(e){}
+        document.getElementById('prevTitle').innerText = data.title;
+        document.getElementById('previewModal').style.display = 'flex';
+    }
+
+    function filterLibrary() {
+        const dFilter = document.getElementById('filterDept').value;
+        const sFilter = document.getElementById('filterStaff').value;
+        document.querySelectorAll('.list-item').forEach(item => {
+            const depts = item.dataset.depts;
+            const staff = item.dataset.staff;
+            let showDept = (dFilter === 'all') || (depts.includes(dFilter));
+            let showStaff = (sFilter === 'all') || (staff === 'all' || staff.includes(sFilter));
+            item.style.display = (showDept && showStaff) ? 'flex' : 'none';
+        });
+    }
+
+    function sortLibrary() {
+        const sortVal = document.getElementById('filterSort').value;
+        const container = document.getElementById('libraryList');
+        const items = Array.from(container.children);
+        items.sort((a, b) => {
+            if (sortVal === 'filled') return parseInt(b.dataset.filled) - parseInt(a.dataset.filled);
+            if (sortVal === 'time_asc') return a.dataset.time.localeCompare(b.dataset.time);
+            if (sortVal === 'time_desc') return b.dataset.time.localeCompare(a.dataset.time);
+            return 0;
+        });
+        items.forEach(i => container.appendChild(i));
+    }
+
+    function submitForm() {
+        const tasks = [];
+        document.querySelectorAll('.task-row').forEach(row => {
+            const t = row.querySelector('.task-input').value.trim();
+            // FIX: Safely check if icon button has 'active' class
+            const icon = row.querySelector('.icon-btn.active');
+            if(t) tasks.push({title:t, is_photo: (icon !== null)});
+        });
+        document.getElementById('tasks_json').value = JSON.stringify(tasks);
+
+        // Handle Frequency Input Logic
+        const form = document.getElementById('checklistForm');
+        const oldH = document.getElementById('hidden-weekly'); if(oldH) oldH.remove();
+
+        if(document.getElementById('freqSelect').value === 'Weekly') {
+            const h = document.createElement('input');
+            h.type='hidden'; h.name='frequency_final'; h.id='hidden-weekly';
+            h.value=`Weekly-${document.getElementById('daySelect').value}`;
+            form.appendChild(h);
+        }
+        form.submit();
+    }
+
+    init();
+</script>
+</body>
+</html>

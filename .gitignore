@@ -1,0 +1,11 @@
+
+nano .gitignore
+__pycache__/
+*.pyc
+*.db
+.env
+.env.*
+instance/
+venv/
+.virtualenv/
+zion_ops_backup_*.zip

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings & Users</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        :root { --primary: #4361ee; --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --border: #e2e8f0; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 50px; }
+        * { box-sizing: border-box; }
+
+        .navbar { background: var(--card); padding: 15px 30px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-weight: 800; font-size: 18px; color: var(--primary); display: flex; align-items: center; gap: 10px; text-decoration: none; }
+        .nav-links { display: flex; gap: 20px; }
+        .nav-item { text-decoration: none; color: #64748b; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 5px; }
+        .nav-item:hover { color: var(--primary); }
+
+        .container { max-width: 1000px; margin: 40px auto; padding: 0 20px; }
+
+        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .page-title { font-size: 24px; font-weight: 800; }
+        .btn-add { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none; transition: 0.2s; }
+        .btn-add:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(67, 97, 238, 0.3); }
+
+        .user-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .user-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; transition: 0.2s; position: relative; overflow: hidden; }
+        .user-card:hover { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); transform: translateY(-2px); border-color: var(--primary); }
+
+        .role-pill { position: absolute; top: 20px; right: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; padding: 4px 8px; border-radius: 4px; }
+        .role-manager { background: #fee2e2; color: #b91c1c; }
+        .role-staff { background: #dcfce7; color: #166534; }
+
+        .user-avatar { width: 50px; height: 50px; background: #eff6ff; color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; margin-bottom: 15px; }
+        .user-name { font-weight: 800; font-size: 16px; margin-bottom: 5px; }
+        .user-dept { font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 15px; }
+        .user-pin { font-family: monospace; background: #f1f5f9; padding: 4px 8px; border-radius: 4px; font-size: 12px; color: #334155; }
+
+        .card-actions { margin-top: 20px; padding-top: 15px; border-top: 1px dashed var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+        .action-btn { color: #94a3b8; cursor: pointer; transition: 0.2s; padding: 5px; border-radius: 4px; }
+        .action-btn:hover { background: #f1f5f9; color: var(--primary); }
+        .action-del:hover { color: #ef4444; background: #fef2f2; }
+
+        /* MODAL */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 30px; border-radius: 16px; width: 400px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); animation: slideIn 0.2s ease-out; }
+        @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .form-group { margin-bottom: 15px; }
+        .form-label { display: block; font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 5px; }
+        .form-input, .form-select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; }
+        .form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1); }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <a href="/" class="logo"><span class="material-icons">arrow_back</span> Dashboard</a>
+    <div class="nav-links">
+        <a href="/admin/checklists" class="nav-item">Checklists</a>
+        <a href="/logout" class="nav-item" style="color:#ef4444;">Logout</a>
+    </div>
+</div>
+
+<div class="container">
+    <div class="header-row">
+        <div class="page-title">Team Management</div>
+        <button class="btn-add" onclick="openModal()">
+            <span class="material-icons">add</span> Add Staff
+        </button>
+    </div>
+
+    <div class="user-grid">
+        {% for u in users %}
+        <div class="user-card">
+            <span class="role-pill {{ 'role-manager' if u.role == 'manager' else 'role-staff' }}">{{ u.role }}</span>
+            <div class="user-avatar">{{ u.name[0] }}</div>
+            <div class="user-name">{{ u.name }}</div>
+            <div class="user-dept">{{ u.department }}</div>
+            <span class="user-pin">PIN: ••••</span> <div class="card-actions">
+                <span class="material-icons action-btn" onclick='editUser({{ u|tojson }})'>edit</span>
+                {% if u.role != 'manager' or u.name != user %}
+                <a href="/admin/delete_user/{{ u.id }}" onclick="return confirm('Remove {{ u.name }}?')" class="material-icons action-btn action-del">delete</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div id="userModal" class="modal" onclick="if(event.target === this) closeModal()">
+    <div class="modal-content">
+        <h2 style="margin-top:0; font-size:18px; margin-bottom:20px;">Staff Profile</h2>
+        <form action="/admin/save_user" method="POST">
+            <input type="hidden" name="user_id" id="userId">
+
+            <div class="form-group">
+                <label class="form-label">Full Name</label>
+                <input type="text" name="name" id="userName" class="form-input" required placeholder="e.g. John Doe">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Login PIN (4 Digits)</label>
+                <input type="text" name="pin" id="userPin" class="form-input" required placeholder="1234" maxlength="6">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Role</label>
+                <select name="role" id="userRole" class="form-select">
+                    <option value="staff">Staff</option>
+                    <option value="manager">Manager (Admin)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Department</label>
+                <select name="department" id="userDept" class="form-select">
+                    <option value="Kitchen">Kitchen</option>
+                    <option value="Service">Service</option>
+                    <option value="Housekeeping">Housekeeping</option>
+                    <option value="Bar">Bar</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn-add" style="width:100%; justify-content:center; margin-top:20px;">Save Profile</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openModal() {
+        document.getElementById('userModal').style.display = 'flex';
+        document.querySelector('form').reset();
+        document.getElementById('userId').value = '';
+    }
+
+    function closeModal() {
+        document.getElementById('userModal').style.display = 'none';
+    }
+
+    function editUser(data) {
+        document.getElementById('userId').value = data.id;
+        document.getElementById('userName').value = data.name;
+        document.getElementById('userPin').value = data.pin;
+        document.getElementById('userRole').value = data.role;
+        document.getElementById('userDept').value = data.department;
+        document.getElementById('userModal').style.display = 'flex';
+    }
+</script>
+
+</body>
+</html>

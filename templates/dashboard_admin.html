@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zion Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        /* (unchanged CSS from your original file) */
+        :root { --primary: #4361ee; --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --border: #e2e8f0; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 50px; }
+
+        .navbar { background: var(--card); padding: 15px 30px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-weight: 900; font-size: 20px; color: var(--primary); display: flex; align-items: center; gap: 10px; }
+        .nav-links { display: flex; gap: 20px; }
+        .nav-item { text-decoration: none; color: #64748b; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 5px; padding: 8px 12px; border-radius: 8px; transition: 0.2s; }
+        .nav-item:hover, .nav-item.active { background: #eff6ff; color: var(--primary); }
+
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; display: grid; grid-template-columns: 2fr 1fr; gap: 30px; }
+
+        .card { background: var(--card); border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 20px; }
+        .card-header { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #fafbfc; }
+        .card-title { font-weight: 800; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+        .card-body { padding: 20px; }
+
+        .date-nav { display: flex; align-items: center; gap: 10px; }
+        .nav-arrow { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: white; border: 1px solid var(--border); color: #64748b; text-decoration: none; transition: 0.2s; }
+        .nav-arrow:hover { background: var(--primary); color: white; border-color: var(--primary); }
+        .current-date { font-weight: 700; font-size: 13px; color: #334155; }
+
+        .staff-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+        .staff-card { border: 1px solid var(--border); border-radius: 12px; padding: 15px; text-align: center; background: white; transition: 0.2s; position: relative; }
+
+        .loc-dot { width: 10px; height: 10px; border-radius: 50%; position: absolute; top: 15px; right: 15px; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .loc-in { background: #10b981; } .loc-out { background: #ef4444; } .loc-none { display:none; }
+
+        .btn-history { position: absolute; top: 10px; left: 10px; color: #94a3b8; cursor: pointer; padding: 5px; border-radius: 50%; transition: 0.2s; }
+        .btn-history:hover { background: #f1f5f9; color: var(--primary); }
+
+        .avatar { width: 50px; height: 50px; background: #eef2ff; border-radius: 50%; margin: 5px auto 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--primary); font-size: 18px; }
+        .staff-name { font-weight: 700; font-size: 14px; margin-bottom: 2px; }
+        .staff-dept { font-size: 10px; color: #94a3b8; text-transform: uppercase; font-weight: 700; margin-bottom: 10px; }
+        .status-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; margin-bottom: 8px; }
+        .status-green { background: #dcfce7; color: #166534; } .status-orange { background: #fef3c7; color: #92400e; } .status-gray { background: #f1f5f9; color: #64748b; }
+        .shift-timer { font-family: monospace; font-size: 14px; font-weight: 700; color: #334155; }
+
+        .form-group { margin-bottom: 15px; }
+        .form-label { display: block; font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 5px; text-transform: uppercase; }
+        .form-input { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 14px; }
+        .btn-primary { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; }
+
+        /* UPDATED PREVIEW BOX FOR LISTS */
+        .preview-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
+        .preview-box { padding: 15px; border-radius: 10px; font-size: 13px; color: #334155; position: relative; }
+        .preview-red { background: #fef2f2; border: 1px solid #fee2e2; border-left: 4px solid #ef4444; }
+        .preview-blue { background: #eff6ff; border: 1px solid #dbeafe; border-left: 4px solid #4361ee; }
+
+        .btn-archive { position: absolute; top: 10px; right: 10px; cursor: pointer; color: #94a3b8; opacity: 0.6; transition: 0.2s; text-decoration: none; }
+        .btn-archive:hover { opacity: 1; color: #ef4444; }
+
+        details.form-dropdown > summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f8fafc; border-radius: 8px; font-weight: 700; font-size: 12px; color: #64748b; }
+        details.form-dropdown > summary::-webkit-details-marker { display: none; }
+        .form-content { padding-top: 15px; animation: slideDown 0.3s ease-out; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        details.history-dropdown { margin-top: 20px; border-top: 1px dashed var(--border); padding-top: 15px; }
+        details.history-dropdown > summary { font-size: 12px; font-weight: 700; color: #94a3b8; cursor: pointer; list-style: none; display:flex; align-items:center; gap:5px; }
+        .history-list { max-height: 250px; overflow-y: auto; margin-top: 10px; }
+        .history-item { padding: 12px; border-bottom: 1px solid #f1f5f9; background: #fafbfc; margin-bottom: 5px; border-radius: 8px; }
+        .btn-clone { background: #eef2ff; color: var(--primary); border: none; padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: 700; cursor: pointer; }
+        .btn-clear { width: 100%; padding: 10px; background: white; color: var(--danger); border: 1px solid #fecaca; border-radius: 8px; font-weight: 700; cursor: pointer; margin-top: 10px; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: white; width: 350px; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.2); animation: popIn 0.2s ease-out; padding-bottom: 20px; }
+        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .modal-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; font-size: 16px; color: #1e293b; font-weight: 800; border-bottom: 1px solid #f1f5f9; }
+        .modal-body { padding: 0; max-height: 400px; overflow-y: auto; }
+        .log-item { padding: 12px 20px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+        .log-date { font-weight: 700; color: #4361ee; margin-right: 5px; }
+        .log-action { color: #334155; font-weight: 500; }
+        .log-time { font-weight: 800; color: #1e293b; }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <div class="logo"><span class="material-icons">admin_panel_settings</span> Zion Admin</div>
+    <div class="nav-links">
+        <a href="#" class="nav-item active"><span class="material-icons" style="font-size:18px;">dashboard</span> Live Monitor</a>
+        <a href="/admin/checklists" class="nav-item"><span class="material-icons" style="font-size:18px;">checklist</span> Checklists</a>
+        <a href="/admin/evidence" class="nav-item"><span class="material-icons" style="font-size:18px;">photo_library</span> Evidence</a>
+        <a href="/admin/history" class="nav-item"><span class="material-icons" style="font-size:18px;">history</span> History</a>
+        <a href="/admin/settings" class="nav-item"><span class="material-icons" style="font-size:18px;">settings</span> Settings</a>
+        <a href="/logout" class="nav-item" style="color:#ef4444;"><span class="material-icons" style="font-size:18px;">logout</span> Logout</a>
+    </div>
+</div>
+
+<div class="container">
+
+    <div>
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><span class="material-icons" style="color:var(--primary);">people</span> Live Staff Status</div>
+                <div class="date-nav">
+                    <a href="?date={{ prev }}" class="nav-arrow"><span class="material-icons" style="font-size:16px;">chevron_left</span></a>
+                    <span class="current-date">{{ date }}</span>
+                    <a href="?date={{ next }}" class="nav-arrow"><span class="material-icons" style="font-size:16px;">chevron_right</span></a>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if staff|length == 0 %}<div style="text-align:center; padding:40px; color:#94a3b8;">No staff members found.</div>{% else %}
+                <div class="staff-grid">
+                    {% for s in staff %}
+                    <!-- add data-user-id so polling JS can find and update cards -->
+                    <div class="staff-card" data-user-id="{{ s.id }}" data-session-start="{{ s.session_start_ts or '' }}" data-active="{{ 'true' if s.is_active else 'false' }}">
+                        {% if is_today %}<div class="loc-dot {% if s.status == 'OFF DUTY' %}loc-none{% elif s.location_ok %}loc-in{% else %}loc-out{% endif %}" title="{{ 'In Range' if s.location_ok else 'Out of Range' }}"></div>{% endif %}
+                        <!-- Clock icon (click to view shift activity) -->
+                        <div class="btn-history" style="cursor:pointer;" onclick="showActivity('{{ s.id }}', '{{ s.name }}')"><span class="material-icons" style="font-size:18px;">schedule</span></div>
+                        <div class="avatar">{{ s.name[0] }}</div>
+                        <div class="staff-name">{{ s.name }}</div>
+                        <div class="staff-dept">{{ s.dept }}</div>
+                        <div class="status-badge status-{{ s.color }}">{{ s.status }}</div>
+                        <div class="shift-timer" data-ms="{{ s.duration_ms }}" data-active="{{ 'true' if s.is_active else 'false' }}">00:00:00</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div>
+
+        <div class="card" style="border-top: 4px solid #ef4444; margin-bottom: 40px;">
+            <div class="card-header"><div class="card-title"><span class="material-icons" style="color:#ef4444;">campaign</span> Duty Broadcaster</div></div>
+            <div class="card-body">
+                {% if active_duties|length > 0 %}
+                    <div class="preview-list">
+                        {% for d in active_duties %}
+                        <div class="preview-box preview-red">
+                            <div style="font-weight:800; color:#ef4444; margin-bottom:5px;">{{ d.title }}</div>
+                            <div>{{ d.reporting_time }} • {{ d.event_date }}</div>
+                            <a href="/admin/archive_duty/{{ d.id }}" class="btn-archive" title="Archive Instruction"><span class="material-icons" style="font-size:16px;">close</span></a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div style="font-size:12px; color:#94a3b8; margin-bottom:10px;">No Active Duty Instructions</div>
+                {% endif %}
+
+                <details class="form-dropdown">
+                    <summary>Create New / Edit <span class="material-icons">expand_more</span></summary>
+                    <div class="form-content">
+                        <form action="/admin/set_duty" method="POST">
+                            <div class="form-group"><label class="form-label">Duty Title</label><input type="text" id="duty_title" name="title" class="form-input" required></div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                                <div class="form-group"><label class="form-label">Date</label><input type="date" id="duty_date" name="date" class="form-input" required></div>
+                                <div class="form-group"><label class="form-label">Time</label><input type="time" id="duty_time" name="time" class="form-input" required></div>
+                            </div>
+                            <div class="form-group"><label class="form-label">Instructions</label><textarea name="content" id="duty_content" class="form-input" rows="3"></textarea></div>
+                            <button type="submit" class="btn-primary">Publish Red Banner</button>
+                        </form>
+                    </div>
+                </details>
+
+                <details class="history-dropdown">
+                    <summary><span class="material-icons" style="font-size:14px;">history</span> History (Clone)</summary>
+                    <div class="history-list">
+                        {% for h in duty_history %}
+                        <div class="history-item"><div style="display:flex; justify-content:space-between;"><b>{{ h.title }}</b><button class="btn-clone" onclick="cloneDuty('{{ h.title }}', '{{ h.event_date }}', '{{ h.reporting_time }}', `{{ h.content|replace('`', '') }}`)">CLONE</button></div><div style="font-size:10px; color:#94a3b8;">{{ h.event_date }}</div></div>
+                        {% endfor %}
+                    </div>
+                </details>
+            </div>
+        </div>
+
+        <div class="card" style="border-top: 4px solid #4361ee;">
+            <div class="card-header"><div class="card-title"><span class="material-icons" style="color:#4361ee;">notifications</span> Updates</div></div>
+            <div class="card-body">
+                {% if active_anns|length > 0 %}
+                    <div class="preview-list">
+                        {% for a in active_anns %}
+                        <div class="preview-box preview-blue">
+                            <div style="font-weight:800; color:#4361ee; margin-bottom:5px;">{{ a.title }}</div>
+                            <div>{{ a.message }}</div>
+                            <a href="/admin/archive_announcement/{{ a.id }}" class="btn-archive" title="Archive Update"><span class="material-icons" style="font-size:16px;">close</span></a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div style="font-size:12px; color:#94a3b8; margin-bottom:10px;">No Active Updates</div>
+                {% endif %}
+
+                <details class="form-dropdown">
+                    <summary>Create New / Edit <span class="material-icons">expand_more</span></summary>
+                    <div class="form-content">
+                        <form action="/admin/set_announcement" method="POST">
+                            <div class="form-group"><label class="form-label">Update Title</label><input type="text" id="ann_title" name="title" class="form-input" required></div>
+                            <div class="form-group"><label class="form-label">Message</label><input type="text" id="ann_message" name="message" class="form-input" required></div>
+                            <button type="submit" class="btn-primary">Publish Blue Banner</button>
+                        </form>
+                    </div>
+                </details>
+
+                <details class="history-dropdown">
+                    <summary><span class="material-icons" style="font-size:14px;">history</span> History (Clone)</summary>
+                    <div class="history-list">
+                        {% for h in ann_history %}
+                        <div class="history-item"><div style="display:flex; justify-content:space-between;"><b>{{ h.title }}</b><button class="btn-clone" onclick="cloneAnn('{{ h.title }}', `{{ h.message }}`)">CLONE</button></div></div>
+                        {% endfor %}
+                    </div>
+                </details>
+            </div>
+        </div>
+
+        <a href="/admin/clear_banners" class="btn-clear" style="display:block; text-align:center; text-decoration:none;">Clear All Banners</a>
+    </div>
+</div>
+
+<div id="activityModal" class="modal" onclick="if(event.target===this)this.style.display='none'">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span id="modalTitle">Activity</span>
+            <span class="material-icons" style="cursor:pointer;" onclick="document.getElementById('activityModal').style.display='none'">close</span>
+        </div>
+        <div class="modal-body" id="modalBody"><div style="padding:20px; text-align:center; color:#94a3b8;">Loading...</div></div>
+    </div>
+</div>
+
+<script>
+const POLL_INTERVAL_MS = 10000; // 10s
+
+function renderTimerElement(timerEl) {
+  const ms = parseInt(timerEl.dataset.ms) || 0;
+  const sec = Math.floor(ms / 1000);
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  timerEl.innerText = `${h<10?'0'+h:h}:${m<10?'0'+m:m}:${s<10?'0'+s:s}`;
+}
+
+function startTimerForElement(timerEl) {
+  if (timerEl._interval) return;
+  timerEl._interval = setInterval(() => {
+    timerEl.dataset.ms = (parseInt(timerEl.dataset.ms) || 0) + 1000;
+    renderTimerElement(timerEl);
+  }, 1000);
+}
+
+function stopTimerForElement(timerEl) {
+  if (timerEl._interval) { clearInterval(timerEl._interval); timerEl._interval = null; }
+}
+
+function updateCardFromServerData(item){
+  // item: {id, name, role, status, session_start_ts, duration_ms, location_ok}
+  const userId = String(item.id);
+  const card = document.querySelector(`.staff-card[data-user-id="${userId}"]`);
+  if(!card) return;
+
+  const badge = card.querySelector('.status-badge');
+  const locDot = card.querySelector('.loc-dot');
+  const timerEl = card.querySelector('.shift-timer');
+
+  // update badge
+  if(badge){
+    if(item.status === 'in'){ badge.innerText = 'ON DUTY'; badge.className = 'status-badge status-green'; }
+    else if(item.status === 'break'){ badge.innerText = 'ON BREAK'; badge.className = 'status-badge status-orange'; }
+    else { badge.innerText = (item.status === 'out' ? 'CLOCKED OUT' : 'OFF DUTY'); badge.className = 'status-badge status-gray'; }
+  }
+
+  // update loc
+  if(locDot){
+    if(item.location_ok) locDot.className = 'loc-dot loc-in';
+    else locDot.className = 'loc-dot loc-none';
+  }
+
+  // update timer
+  if(timerEl){
+    // clear previous interval in any case then set proper ms & interval
+    stopTimerForElement(timerEl);
+
+    if(item.session_start_ts){
+      // compute starting ms = now - session_start_ts
+      try {
+        const parts = item.session_start_ts.split(' ');
+        const dateParts = parts[0].split('-').map(p => parseInt(p));
+        const timeParts = (parts[1]||'00:00:00').split(':').map(p => parseInt(p));
+        const startDt = new Date(dateParts[0], dateParts[1]-1, dateParts[2], timeParts[0]||0, timeParts[1]||0, timeParts[2]||0);
+        const now = new Date();
+        const ms = Math.max(0, now - startDt);
+        timerEl.dataset.ms = ms;
+        renderTimerElement(timerEl);
+        // start running if status is 'in'
+        if(item.status === 'in') startTimerForElement(timerEl);
+      } catch(e) {
+        // fallback to duration_ms
+        timerEl.dataset.ms = item.duration_ms || 0;
+        renderTimerElement(timerEl);
+        if(item.status === 'in') startTimerForElement(timerEl);
+      }
+    } else {
+      // no active session start — show static duration (or zero)
+      timerEl.dataset.ms = item.duration_ms || 0;
+      renderTimerElement(timerEl);
+      // timer is not running if status is out or logged
+      if(item.status === 'in') startTimerForElement(timerEl);
+    }
+    // update dataset active flag
+    card.dataset.active = (item.status === 'in') ? 'true' : 'false';
+  }
+}
+
+async function pollLiveStaff(){
+  try {
+    const res = await fetch('/api/get_live_data');
+    if(!res.ok) return;
+    const data = await res.json();
+    if(data && Array.isArray(data.staff)){
+      data.staff.forEach(updateCardFromServerData);
+    }
+  } catch (e) {
+    console.error('live poll failed', e);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // initial render (in case server rendered ms/ds)
+  document.querySelectorAll('.shift-timer').forEach(renderTimerElement);
+  // poll periodically
+  pollLiveStaff();
+  setInterval(pollLiveStaff, POLL_INTERVAL_MS);
+});
+</script>
+
+</body>
+</html>

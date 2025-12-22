@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>History Log</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        :root { --primary: #4361ee; --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0; --text: #1e293b; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 50px; }
+        * { box-sizing: border-box; }
+
+        .navbar { background: var(--card); padding: 15px 30px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+        .logo { font-weight: 800; font-size: 18px; color: var(--primary); text-decoration: none; display: flex; align-items: center; gap: 10px; }
+        .nav-links { display: flex; gap: 20px; }
+        .nav-item { text-decoration: none; color: #64748b; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 5px; }
+        .nav-item:hover { color: var(--primary); }
+
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; display: grid; grid-template-columns: 1fr 2fr; gap: 30px; }
+
+        /* HEADER & CONTROLS */
+        .page-header { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .date-nav { display: flex; align-items: center; gap: 10px; background: white; padding: 5px; border-radius: 8px; border: 1px solid var(--border); }
+        .nav-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; cursor: pointer; color: #64748b; text-decoration: none; transition: 0.2s; }
+        .nav-btn:hover { background: #f1f5f9; color: var(--primary); }
+        .date-display { font-weight: 700; font-size: 14px; padding: 0 10px; }
+
+        .btn-export { background: #eff6ff; color: var(--primary); padding: 10px 15px; border-radius: 8px; font-weight: 700; font-size: 13px; border: 1px solid #dbeafe; text-decoration: none; display: flex; align-items: center; gap: 5px; }
+        .btn-export:hover { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* CARDS */
+        .card { background: var(--card); border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); overflow: hidden; height: 100%; display: flex; flex-direction: column; }
+        .card-header { padding: 20px; border-bottom: 1px solid var(--border); font-weight: 800; font-size: 15px; display: flex; align-items: center; gap: 8px; background: #fafbfc; }
+        .card-body { padding: 0; overflow-y: auto; max-height: 600px; }
+
+        /* TIMELINE (DAILY LOG) */
+        .timeline-item { padding: 15px 20px; border-bottom: 1px solid #f1f5f9; display: flex; gap: 15px; align-items: flex-start; transition: 0.1s; }
+        .timeline-item:hover { background: #f8fafc; }
+        .tl-time { font-size: 12px; font-weight: 700; color: #94a3b8; min-width: 40px; margin-top: 2px; }
+        .tl-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; }
+
+        .icon-attendance { background: #dcfce7; color: #166534; }
+        .icon-task { background: #eff6ff; color: var(--primary); }
+        .icon-break { background: #fef3c7; color: #92400e; }
+
+        .tl-content { flex: 1; }
+        .tl-user { font-weight: 700; font-size: 13px; color: #1e293b; }
+        .tl-detail { font-size: 12px; color: #64748b; margin-top: 2px; }
+
+        /* ATTENDANCE TABLE */
+        .report-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .report-table th { text-align: left; padding: 12px 20px; background: #f8fafc; color: #64748b; font-weight: 700; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+        .report-table td { padding: 12px 20px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+        .report-table tr:last-child td { border-bottom: none; }
+        .tag { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+        .tag-present { background: #dcfce7; color: #166534; }
+        .tag-absent { background: #fef2f2; color: #b91c1c; }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <a href="/" class="logo"><span class="material-icons">arrow_back</span> Dashboard</a>
+    <div class="nav-links">
+        <div style="font-weight:700;">History & Reporting</div>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="page-header">
+        <div class="date-nav">
+            <a href="?date={{ prev }}" class="nav-btn"><span class="material-icons" style="font-size:16px;">chevron_left</span></a>
+            <span class="date-display">{{ date }}</span>
+            <a href="?date={{ next }}" class="nav-btn"><span class="material-icons" style="font-size:16px;">chevron_right</span></a>
+        </div>
+        <a href="/admin/history/download_csv?date={{ date }}" class="btn-export">
+            <span class="material-icons" style="font-size:16px;">download</span> Export CSV
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><span class="material-icons" style="color:var(--primary);">history</span> Daily Activity Log</div>
+        <div class="card-body">
+            {% if timeline|length == 0 %}
+            <div style="padding:40px; text-align:center; color:#94a3b8; font-size:13px;">No activity recorded for this date.</div>
+            {% endif %}
+
+            {% for item in timeline %}
+            <div class="timeline-item">
+                <div class="tl-time">{{ item.time }}</div>
+                <div class="tl-icon {% if item.type == 'attendance' %}icon-attendance{% elif item.type == 'task' %}icon-task{% else %}icon-break{% endif %}">
+                    <span class="material-icons" style="font-size:16px;">{{ item.icon }}</span>
+                </div>
+                <div class="tl-content">
+                    <div class="tl-user">{{ item.user }}</div>
+                    <div class="tl-detail">
+                        {% if item.type == 'attendance' %}
+                            {% if item.action == 'in' %}Clocked In{% elif item.action == 'out' %}Clocked Out{% else %}Started Break{% endif %}
+                        {% else %}
+                            {{ item.detail }}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><span class="material-icons" style="color:#10b981;">schedule</span> Attendance Summary</div>
+        <div class="card-body" style="overflow:hidden;">
+            <table class="report-table">
+                <thead>
+                    <tr>
+                        <th>Staff</th>
+                        <th>Status</th>
+                        <th>In</th>
+                        <th>Out</th>
+                        <th>Duration</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in report %}
+                    <tr>
+                        <td>
+                            <div style="font-weight:700;">{{ r.name }}</div>
+                            <div style="font-size:10px; color:#94a3b8;">{{ r.dept }}</div>
+                        </td>
+                        <td>
+                            <span class="tag {% if r.status == 'Present' %}tag-present{% else %}tag-absent{% endif %}">{{ r.status }}</span>
+                        </td>
+                        <td>{{ r.in }}</td>
+                        <td>{{ r.out }}</td>
+                        <td style="font-weight:700;">{{ r.duration }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

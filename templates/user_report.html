@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Staff Report: {{ user_name }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5; --bg: #f3f4f6; --card: #ffffff;
+            --text: #1f2937; --gray: #6b7280; --border: #e5e7eb;
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+
+        /* HEADER */
+        .report-header { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .user-info h1 { margin: 0; font-size: 1.5rem; color: #111; }
+        .user-info span { color: var(--gray); font-size: 0.9rem; }
+        .btn-print { background: white; border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: 600; }
+        .btn-back { text-decoration: none; color: var(--primary); font-weight: 600; display: flex; align-items: center; gap: 5px; margin-bottom: 15px; }
+
+        /* GRID LAYOUT */
+        .report-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        @media(max-width: 700px) { .report-grid { grid-template-columns: 1fr; } }
+
+        /* CARDS */
+        .card { background: var(--card); border-radius: 12px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid var(--border); }
+        .card h3 { margin: 0 0 15px 0; font-size: 1rem; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+
+        /* TIMELINE */
+        .timeline { position: relative; padding-left: 20px; border-left: 2px solid var(--border); }
+        .t-item { margin-bottom: 20px; position: relative; }
+        .t-dot { position: absolute; left: -26px; top: 0; width: 10px; height: 10px; border-radius: 50%; border: 2px solid white; }
+        .t-in { background: #10b981; } .t-out { background: #ef4444; } .t-break { background: #f59e0b; } .t-task { background: #4f46e5; }
+        .t-time { font-family: monospace; font-size: 0.8rem; color: var(--gray); }
+        .t-content { font-weight: 600; font-size: 0.95rem; }
+        .t-meta { font-size: 0.8rem; color: var(--gray); margin-top: 2px; }
+
+        /* CHECKLISTS */
+        .check-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed var(--border); }
+        .check-title { font-weight: 600; }
+        .btn-view { font-size: 0.75rem; color: var(--primary); text-decoration: none; background: #e0e7ff; padding: 2px 8px; border-radius: 4px; }
+
+        /* NOTES */
+        .note-item { background: #fffbeb; border-left: 4px solid #f59e0b; padding: 10px; margin-bottom: 10px; border-radius: 4px; }
+        .note-text { font-size: 0.9rem; color: #92400e; font-style: italic; }
+        .note-meta { font-size: 0.7rem; color: #b45309; margin-top: 5px; text-align: right; }
+
+        @media print {
+            body { background: white; padding: 0; }
+            .btn-print, .btn-back { display: none; }
+            .container { max-width: 100%; }
+            .card { box-shadow: none; border: 1px solid #ddd; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="/" class="btn-back"><span class="material-icons">arrow_back</span> Back to Command Center</a>
+
+    <div class="report-header">
+        <div class="user-info">
+            <h1>{{ user_name }}</h1>
+            <span>Personnel ID: #{{ user_id }}</span>
+        </div>
+        <button class="btn-print" onclick="window.print()">
+            <span class="material-icons">print</span> Print Report
+        </button>
+    </div>
+
+    <div class="report-grid">
+        <div>
+            <div class="card">
+                <h3><span class="material-icons" style="font-size:16px; vertical-align:middle;">history</span> Shift Timeline (Last 20 Events)</h3>
+                <div class="timeline">
+                    {% for log in logs %}
+                    <div class="t-item">
+                        {% if log.action == 'in' %}<div class="t-dot t-in"></div>
+                        {% elif log.action == 'out' %}<div class="t-dot t-out"></div>
+                        {% elif 'break' in log.action %}<div class="t-dot t-break"></div>
+                        {% else %}<div class="t-dot t-task"></div>{% endif %}
+
+                        <div class="t-time">{{ log.timestamp }}</div>
+                        <div class="t-content">
+                            {{ log.action|replace('_', ' ')|title }}
+                        </div>
+                        {% if log.lat %}
+                        <div class="t-meta">📍 GPS Logged</div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div style="color:var(--gray); padding:10px;">No recent activity found.</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="card">
+                <h3><span class="material-icons" style="font-size:16px; vertical-align:middle;">checklist</span> Recent Checklists</h3>
+                {% for c in checks %}
+                <div class="check-row">
+                    <div>
+                        <div class="check-title">{{ c.title }}</div>
+                        <div style="font-size:0.75rem; color:var(--gray);">{{ c.timestamp }}</div>
+                    </div>
+                    <button class="btn-view" onclick="viewChecklist({{ c.id }})">View Answers</button>
+                </div>
+                {% else %}
+                <div style="color:var(--gray);">No checklists submitted recently.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div>
+            <div class="card">
+                <h3><span class="material-icons" style="font-size:16px; vertical-align:middle;">note</span> Admin Notes Log</h3>
+                {% for n in notes %}
+                <div class="note-item">
+                    <div class="note-text">"{{ n.note }}"</div>
+                    <div class="note-meta">by {{ n.author }} • {{ n.timestamp }}</div>
+                </div>
+                {% else %}
+                <div style="color:var(--gray); font-size:0.9rem; text-align:center;">No internal notes.</div>
+                {% endfor %}
+            </div>
+
+            <div class="card">
+                <h3>Performance Stats</h3>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; text-align:center;">
+                    <div style="background:#f9fafb; padding:10px; border-radius:8px;">
+                        <div style="font-size:1.5rem; font-weight:800; color:var(--primary);">{{ checks|length }}</div>
+                        <div style="font-size:0.7rem; color:var(--gray);">TASKS DONE</div>
+                    </div>
+                    <div style="background:#f9fafb; padding:10px; border-radius:8px;">
+                        <div style="font-size:1.5rem; font-weight:800; color:var(--gray);">{{ logs|length }}</div>
+                        <div style="font-size:0.7rem; color:var(--gray);">ACTIVITIES</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="detailModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
+    <div style="background:white; padding:20px; border-radius:8px; width:90%; max-width:400px; max-height:80vh; overflow-y:auto;">
+        <h3 id="modalTitle">Checklist Detail</h3>
+        <div id="modalContent"></div>
+        <button onclick="document.getElementById('detailModal').style.display='none'" style="width:100%; margin-top:15px; padding:10px; cursor:pointer;">Close</button>
+    </div>
+</div>
+
+<script>
+    function viewChecklist(logId) {
+        fetch(`/api/get_checklist_detail/${logId}`)
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('modalTitle').innerText = data.title;
+                let html = '';
+                if(data.task_list && data.answers) {
+                    data.task_list.forEach((t, i) => {
+                        let key = 'task_' + (i+1);
+                        let isDone = data.answers[key] === 'done';
+                        let photo = data.answers['photo_' + (i+1)];
+                        let tTitle = t.title || t;
+
+                        html += `<div style="margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:5px;">
+                            <div style="display:flex; justify-content:space-between;">
+                                <span>${tTitle}</span>
+                                <span>${isDone ? '✅' : '❌'}</span>
+                            </div>
+                            ${photo ? `<a href="/static/uploads/${photo}" target="_blank" style="font-size:0.8rem; color:blue;">View Photo</a>` : ''}
+                        </div>`;
+                    });
+                }
+                document.getElementById('modalContent').innerHTML = html;
+                document.getElementById('detailModal').style.display = 'flex';
+            });
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Zion Staff</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <style>
+        /* (unchanged CSS from your original file) */
+        :root {
+            --primary: #4361ee; --primary-light: #eef2ff; --success: #10b981; --warning: #f59e0b; --danger: #ef4444;
+            --dark: #1e293b; --gray: #64748b; --bg: #f8fafc; --card-bg: #ffffff;
+            --shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05); --radius: 16px;
+        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--dark); margin: 0; padding-bottom: 120px; }
+
+        /* HEADER */
+        .header { background: var(--card-bg); padding: 12px 20px; position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 10px rgba(0,0,0,0.03); }
+        .logo-img { height: 35px; width: auto; object-fit: contain; }
+        .user-pill { background: var(--primary-light); color: var(--primary); padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 5px; }
+        .container { padding: 20px; max-width: 500px; margin: 0 auto; }
+
+        /* KPI */
+        .kpi-container { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .kpi-card { background: var(--card-bg); padding: 12px 5px; border-radius: var(--radius); text-align: center; box-shadow: var(--shadow); border: 1px solid #f1f5f9; }
+        .kpi-val { font-size: 18px; font-weight: 800; display: block; line-height: 1.2; }
+        .kpi-lbl { font-size: 10px; font-weight: 600; color: var(--gray); text-transform: uppercase; }
+        .text-green { color: var(--success); } .text-orange { color: var(--warning); } .text-red { color: var(--danger); }
+
+        /* CLOCK CARD */
+        details.clock-details { background: var(--card-bg); border-radius: 24px; margin-bottom: 20px; box-shadow: 0 10px 30px -10px rgba(67, 97, 238, 0.15); overflow: hidden; border: 1px solid white; }
+        details.clock-details > summary { list-style: none; padding: 15px 20px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; cursor: pointer; background: linear-gradient(to bottom, #ffffff, #fafafa); transition: 0.2s; }
+        details.clock-details > summary::-webkit-details-marker { display: none; }
+
+        .summary-right { display: flex; justify-content: flex-end; }
+        .date-text { font-size: 10px; font-weight: 700; color: var(--gray); text-transform: uppercase; }
+        .live-clock { font-size: 11px; font-weight: 800; color: var(--dark); margin-top: 2px; }
+
+        /* DYNAMIC MINI TIMER LOGIC */
+        .shift-timer-mini { font-size: 18px; font-weight: 800; color: var(--primary); font-variant-numeric: tabular-nums; text-align: center; opacity: 1; transition: opacity 0.2s; }
+        details.clock-details[open] .shift-timer-mini { display: none; }
+
+        .clock-content { padding: 5px 20px 25px 20px; text-align: center; }
+        .main-timer { font-size: 42px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--dark); margin: 10px 0; }
+        .stats-row { display: flex; justify-content: center; gap: 30px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed #e2e8f0; }
+        .stat-val { font-size: 14px; font-weight: 700; color: var(--dark); }
+        .stat-lbl { font-size: 9px; color: var(--gray); font-weight: 700; text-transform: uppercase; }
+
+        .action-row { display: flex; gap: 10px; }
+        .btn-compact { flex: 1; border: none; padding: 16px; border-radius: 14px; font-weight: 700; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: transform 0.1s; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .btn-compact:active { transform: scale(0.96); }
+        .btn-green { background: var(--success); color: white; } .btn-orange { background: var(--warning); color: white; } .btn-red { background: var(--danger); color: white; }
+        .hidden-btn { display: none !important; }
+        .status-pill { padding: 5px 10px; border-radius: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; display: inline-block; }
+        .status-out { background: #f1f5f9; color: var(--gray); } .status-in { background: #d1fae5; color: #065f46; } .status-break { background: #fef3c7; color: #92400e; }
+
+        /* BANNERS */
+        .banner-wrapper { margin-bottom: 15px; border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+        .duty-banner { border-left: 5px solid var(--danger); background: white; }
+        .duty-summary { padding: 15px; display: flex; align-items: center; justify-content: space-between; background: #fef2f2; color: var(--danger); font-weight: 700; font-size: 13px; }
+        .duty-content { padding: 15px; background: white; font-size: 13px; color: #475569; line-height: 1.5; }
+        .ann-banner { border-left: 5px solid var(--primary); background: white; }
+        .ann-summary { padding: 15px; display: flex; align-items: center; gap: 10px; background: var(--primary-light); color: var(--primary); font-weight: 700; font-size: 13px; }
+        .ann-summary.read { background: white; color: var(--gray); }
+
+        /* CATEGORIES */
+        .section-title { font-size: 12px; font-weight: 800; color: var(--gray); text-transform: uppercase; letter-spacing: 1px; margin: 30px 0 10px 5px; }
+        details.cat-details > summary { list-style: none; padding: 12px 15px; border-radius: 12px; margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 13px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+        details.cat-details > summary::-webkit-details-marker { display: none; }
+        .cat-active summary { background: #fef2f2; color: var(--danger); border: 1px solid #fee2e2; }
+        .cat-upcoming summary { background: #fffbeb; color: #b45309; border: 1px solid #fef3c7; }
+        .cat-quick summary { background: #eff6ff; color: var(--primary); border: 1px solid #dbeafe; }
+        .cat-completed summary { background: #f0fdf4; color: #15803d; border: 1px solid #dcfce7; }
+
+        /* TASK CARD */
+        .task-card { background: var(--card-bg); border-radius: var(--radius); margin-bottom: 15px; box-shadow: var(--shadow); border: 1px solid #f1f5f9; overflow: hidden; position: relative; }
+        .priority-chip { position: absolute; top: 12px; right: 12px; font-size: 9px; padding: 3px 8px; border-radius: 6px; font-weight: 800; text-transform: uppercase; z-index: 10; }
+        .prio-High { background: #fee2e2; color: var(--danger); } .prio-Medium { background: #fef3c7; color: #b45309; } .prio-Low { background: #ecfdf5; color: #047857; }
+
+        summary.card-summary { padding: 18px; list-style: none; position: relative; }
+        summary.card-summary::-webkit-details-marker { display: none; }
+
+        .task-title { font-weight: 700; font-size: 15px; margin-bottom: 5px; color: var(--dark); padding-right: 60px; }
+        .progress-track { height: 6px; background: #f1f5f9; border-radius: 3px; overflow: hidden; margin-top: 10px; }
+        .progress-fill { height: 100%; transition: width 0.5s ease; border-radius: 3px; }
+        .bg-green { background: var(--success); } .bg-blue { background: var(--primary); } .bg-red { background: var(--danger); }
+        .meta-row { display: flex; justify-content: space-between; font-size: 11px; color: var(--gray); margin-top: 8px; font-weight: 500; }
+
+        .card-body { padding: 0 18px 18px 18px; background: #fafbfc; border-top: 1px solid #f1f5f9; }
+        .check-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px dashed #e2e8f0; }
+        .custom-check { width: 24px; height: 24px; border: 2px solid #cbd5e1; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: white; flex-shrink: 0; }
+        .custom-check.checked { background: var(--primary); border-color: var(--primary); }
+        .custom-check.checked i { display: block; color: white; font-size: 16px; } .custom-check i { display: none; }
+        .photo-btn { background: #f1f5f9; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; color: #475569; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; border: 1px solid #e2e8f0; } .photo-btn.uploaded { background: #d1fae5; color: #065f46; border-color: #10b981; }
+
+        .btn-submit { width: 100%; padding: 14px; border-radius: 12px; border: none; font-weight: 700; margin-top: 15px; background: var(--dark); color: white; font-size: 13px; cursor: pointer; }
+        .btn-locked { background: #f1f5f9; color: var(--gray); cursor: not-allowed; }
+
+        .audit-footer { background: #f8fafc; padding: 12px 18px; font-size: 11px; color: #64748b; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; border-top: 1px solid #e2e8f0; }
+        .audit-item { display: flex; align-items: center; gap: 5px; font-weight: 600; } .audit-item i { font-size: 13px; color: #94a3b8; }
+
+        /* TO-DO */
+        .todo-section { background: white; border-radius: 16px; margin-top: 30px; box-shadow: 0 4px 20px -2px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; border-left: 5px solid var(--dark); }
+        .todo-header { padding: 15px; background: white; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
+        .todo-input-row { display: flex; flex-direction:column; gap: 10px; padding: 15px; background: #fafbfc; }
+        .todo-input { padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; outline: none; width:100%; }
+        .date-input { padding: 10px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 12px; width: 100%; background:white; }
+        .btn-add { background: var(--dark); color: white; border: none; padding: 12px; border-radius: 10px; cursor: pointer; width:100%; font-weight:700; }
+        .todo-list { padding: 0; margin: 0; list-style: none; background: white; min-height: 50px; }
+        .todo-item { display: flex; align-items: flex-start; padding: 15px; border-bottom: 1px solid #f1f5f9; gap: 12px; transition: 0.3s; }
+        .todo-text { flex: 1; font-size: 14px; color: #475569; line-height: 1.4; }
+        .todo-meta { font-size: 10px; color: var(--primary); font-weight: 700; margin-top: 4px; display: block; }
+        .todo-done { opacity: 0.5; background: #f8fafc; } .todo-done .todo-text { text-decoration: line-through; color: #cbd5e1; }
+
+        .reminder-pill { display: none; margin-top: 10px; background: #fff7ed; color: #c2410c; padding: 8px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; border: 1px solid #ffedd5; }
+        .reminder-urgent { background: #fef2f2; color: #b91c1c; border-color: #fecaca; animation: shake 0.5s; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <img src="/static/Foodcrate.png" alt="FoodCrate" class="logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
+    <span class="logo" style="display:none;">Zion Ops</span>
+    <div class="user-pill"><span>{{ user }}</span><a href="/logout"><span class="material-icons" style="font-size:18px; color:var(--primary);">logout</span></a></div>
+</div>
+
+<!-- container includes data-user-id for JS to reference -->
+<div class="container" data-user-id="{{ session.user_id }}">
+
+    <div class="kpi-container">
+        <div class="kpi-card"><span class="kpi-val text-green">{{ kpi.completed }}</span><span class="kpi-lbl">Done</span></div>
+        <div class="kpi-card"><span class="kpi-val text-orange">{{ kpi.pending }}</span><span class="kpi-lbl">Pending</span></div>
+        <div class="kpi-card"><span class="kpi-val text-red">{{ kpi.overdue }}</span><span class="kpi-lbl">Overdue</span></div>
+    </div>
+
+    <details class="clock-details" open>
+        <summary>
+            <div class="summary-left"><div class="date-text">{{ current_date }}</div><div class="live-clock" id="liveClock">--:--</div></div>
+            <div class="summary-center"><div class="shift-timer-mini" id="miniShiftTimer">00:00:00</div></div>
+            <div class="summary-right"><div id="statusBadge" class="status-pill status-out">OFF DUTY</div></div>
+        </summary>
+
+        <div class="clock-content">
+            <div class="main-timer" id="workTimer">00:00:00</div>
+            <div id="dutyReminder" class="reminder-pill"></div>
+            <div class="stats-row">
+                <div class="stat-item"><div class="stat-val" id="sessionTimer">0h 0m</div><div class="stat-lbl">Session</div></div>
+                <div class="stat-item"><div class="stat-val" id="breakTimer" style="color:var(--warning);">0h 0m</div><div class="stat-lbl">Break</div></div>
+            </div>
+            <div class="action-row">
+                <button id="btnIn" class="btn-compact btn-green hidden-btn" onclick="clockAction('in')"><i class="material-icons">login</i> Check In</button>
+                <button id="btnResume" class="btn-compact btn-orange hidden-btn" onclick="clockAction('in')"><i class="material-icons">play_arrow</i> Resume</button>
+                <button id="btnBreak" class="btn-compact btn-orange hidden-btn" onclick="breakGuard()"><i class="material-icons">coffee</i> Break</button>
+                <button id="btnOut" class="btn-compact btn-red hidden-btn" onclick="clockAction('out')"><i class="material-icons">logout</i> Clock Out</button>
+            </div>
+            <details style="margin-top:20px; border-top:1px dashed #e2e8f0; padding-top:15px;">
+                <summary style="font-size:11px; font-weight:700; color:#94a3b8; cursor:pointer; list-style:none; display:flex; align-items:center; gap:5px;">VIEW SHIFT ACTIVITY <span class="material-icons" style="font-size:14px;">expand_more</span></summary>
+                <div style="text-align:left; margin-top:10px; font-size:12px; color:#475569;">
+                    {% for log in logs %}
+                    <div style="padding:6px 0; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between;">
+                        <span><b style="color:var(--primary);">{{ log.date_str }}</b> {{ log.action }}</span>
+                        <span style="font-weight:600;">{{ log.time_str }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </details>
+        </div>
+    </details>
+
+    {% for duty in duties %}
+    <div class="banner-wrapper duty-banner" style="margin-bottom:15px;">
+        <details class="duty-details" open>
+            <summary class="duty-summary">
+                <div style="display:flex; align-items:center; gap:8px;"><span class="material-icons duty-icon">campaign</span><span>DUTY: {{ duty.title }}</span></div>
+                <span class="material-icons">expand_more</span>
+            </summary>
+            <div class="duty-content">
+                <div style="font-size:11px; font-weight:700; color:#b91c1c; margin-bottom:10px;">Report: {{ duty.reporting_time }}</div>
+                <ul style="padding-left:20px; margin:0; color:#334155;">
+                    {% for line in duty.lines %}<li>{{ line }}</li>{% endfor %}
+                </ul>
+            </div>
+        </details>
+    </div>
+    {% endfor %}
+
+    {% for update in updates %}
+    <div class="banner-wrapper ann-banner" style="margin-bottom:15px;">
+        <details class="banner-details">
+            <summary class="ann-summary {% if update.is_read %}read{% endif %}">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span class="material-icons">{% if update.is_read %}notifications_none{% else %}notifications_active{% endif %}</span>
+                    <span>{% if update.is_read %}Update{% else %}New Update{% endif %}</span>
+                </div>
+            </summary>
+            <div class="duty-content">
+                <div style="font-weight:800; margin-bottom:5px;">{{ update.title }}</div>
+                <div style="font-size:13px; color:#475569; margin-bottom:10px;">{{ update.message }}</div>
+                {% if update.meta_list %}
+                <ul style="padding-left:20px; margin:0; font-size:12px; color:#64748b;">{% for m in update.meta_list %}<li>{{ m }}</li>{% endfor %}</ul>
+                {% endif %}
+                {% if not update.is_read %}
+                <button class="btn-submit" onclick="acknowledge('{{ update.id }}', this)">Noted</button>
+                {% endif %}
+            </div>
+        </details>
+    </div>
+    {% endfor %}
+
+    <div class="section-title">Assigned Tasks</div>
+
+    {% if tasks.active %}
+    <details class="cat-details cat-active" open>
+        <summary>ACTIVE NOW ({{ tasks.active|length }}) <span class="material-icons">expand_more</span></summary>
+        {% for list in tasks.active %}
+            <div class="task-card">
+                <div class="priority-chip prio-{{ list.priority }}">{{ list.priority }}</div>
+                <details class="card-details" id="details_{{ list.id }}" data-active="true">
+                    <summary class="card-summary">
+                        <div class="task-title">{{ list.title }}</div>
+                        <div class="meta-row">
+                            <span>
+                                <span style="color:var(--success); font-weight:700;">🟢 Active Now</span>
+                                {% if list.minutes_left is defined %}<span style="color:var(--warning); margin-left:5px;">(Closing in {{ list.minutes_left }}m)</span>{% endif %}
+                            </span>
+                            <span>{{ list.saved_data|length }}/{{ list.task_items|length }}</span>
+                        </div>
+                        <div class="progress-track"><div class="progress-fill bg-green" style="width: {{ (list.saved_data|length / list.task_items|length * 100)|int }}%;"></div></div>
+                    </summary>
+                    <div class="card-body">
+                        <form id="form_{{ list.id }}" onsubmit="submitForm(event, '{{ list.id }}')">
+                        <input type="hidden" name="checklist_id" value="{{ list.id }}">
+                        {% for task in list.task_items %}{% set title = task.title if task.title is defined else task %}{% set is_photo = task.is_photo if task.is_photo is defined else false %}{% set is_done = list.saved_data.get(title) == 'done' %}<div class="check-item"><input type="checkbox" name="{{ title }}" id="cb_{{ list.id }}_{{ loop.index }}" value="done" {% if is_done %}checked{% endif %} style="display:none;" onchange="updateBar('{{ list.id }}')"><div id="vis_{{ list.id }}_{{ loop.index }}" class="custom-check {% if is_done %}checked{% endif %} {% if is_photo and not is_done %}disabled{% endif %}" {% if not is_photo %}onclick="toggleCheck('cb_{{ list.id }}_{{ loop.index }}', this); updateBar('{{ list.id }}')"{% endif %}><i class="material-icons">check</i></div><div style="flex:1;"><div style="font-size:14px; color:#334155; line-height:1.4;">{{ title }}</div>{% if is_photo %}<div style="margin-top:10px; display:flex; align-items:center;"><label class="photo-btn {% if is_done %}uploaded{% endif %}" id="lbl_{{ list.id }}_{{ loop.index }}"><span class="material-icons" style="font-size:16px;">camera_alt</span> <span id="txt_{{ list.id }}_{{ loop.index }}">{% if is_done %}Uploaded{% else %}Add Photo{% endif %}</span><input type="file" name="{{ title }}" accept="image/*" capture="environment" style="display:none;" onchange="photoCaptured(this, '{{ list.id }}_{{ loop.index }}')"></label></div>{% endif %}</div></div>{% endfor %}
+                        <div style="margin-top:10px;"><button type="submit" class="btn-submit" id="btn_{{ list.id }}">{% if list.attempt_count == 0 %}SUBMIT CHECKLIST{% else %}UPDATE ({{ 3 - list.attempt_count }} Left){% endif %}</button></div>
+                        </form>
+                    </div>
+                    <div class="audit-footer"><div class="audit-item"><i class="material-icons">play_circle</i> {{ list.start_time }}</div><div class="audit-item"><i class="material-icons">stop_circle</i> {{ list.end_time|default('-') }}</div><div class="audit-item"><i class="material-icons">timer</i> {{ list.duration }}</div><div class="audit-item"><i class="material-icons">history</i> {{ list.attempt_count }}/3</div></div>
+                </details>
+            </div>
+        {% endfor %}
+    </details>
+    {% endif %}
+
+    {% if tasks.quick %}
+    <details class="cat-details cat-quick" open>
+        <summary>QUICK TASKS ({{ tasks.quick|length }}) <span class="material-icons">expand_more</span></summary>
+        {% for list in tasks.quick %}
+            <div class="task-card">
+                <div class="priority-chip prio-{{ list.priority }}">{{ list.priority }}</div>
+                <details class="card-details" id="details_{{ list.id }}">
+                    <summary class="card-summary">
+                        <div class="task-title">{{ list.title }}</div>
+                        <div class="meta-row"><span>{% if list.status in ['ACTIVE', 'ACTIVE_PARTIAL'] %}<span style="color:var(--success); font-weight:700;">🟢 Active Now</span>{% else %}Due: {{ list.activates_str }}{% endif %}</span><span>{{ list.saved_data|length }}/{{ list.task_items|length }}</span></div>
+                        <div class="progress-track"><div class="progress-fill bg-blue" style="width: {{ (list.saved_data|length / list.task_items|length * 100)|int }}%;"></div></div>
+                    </summary>
+                    <div class="card-body">
+                        <form id="form_{{ list.id }}" onsubmit="submitForm(event, '{{ list.id }}')"><input type="hidden" name="checklist_id" value="{{ list.id }}">{% for task in list.task_items %}{% set title = task.title if task.title is defined else task %}{% set is_done = list.saved_data.get(title) == 'done' %}<div class="check-item"><input type="checkbox" name="{{ title }}" id="cb_{{ list.id }}_{{ loop.index }}" value="done" {% if is_done %}checked{% endif %} style="display:none;" onchange="updateBar('{{ list.id }}')"><div id="vis_{{ list.id }}_{{ loop.index }}" class="custom-check {% if is_done %}checked{% endif %}" onclick="toggleCheck('cb_{{ list.id }}_{{ loop.index }}', this); updateBar('{{ list.id }}')"><i class="material-icons">check</i></div><div style="flex:1;"><div style="font-size:14px; color:#334155;">{{ title }}</div></div></div>{% endfor %}<div style="margin-top:10px;"><button type="submit" class="btn-submit" id="btn_{{ list.id }}">{% if list.status in ['ACTIVE', 'ACTIVE_PARTIAL'] %}Submit{% else %}Locked{% endif %}</button></div></form>
+                    </div>
+                    <div class="audit-footer"><div class="audit-item"><i class="material-icons">play_circle</i> {{ list.start_time }}</div><div class="audit-item"><i class="material-icons">timer</i> {{ list.duration }}</div></div>
+                </details>
+            </div>
+        {% endfor %}
+    </details>
+    {% endif %}
+
+    {% if tasks.upcoming %}
+    <details class="cat-details cat-upcoming">
+        <summary>UPCOMING ({{ tasks.upcoming|length }}) <span class="material-icons">expand_more</span></summary>
+        {% for list in tasks.upcoming %}
+            <div class="task-card">
+                <div class="priority-chip prio-{{ list.priority }}">{{ list.priority }}</div>
+                <div style="padding:18px;">
+                    <div class="task-title">{{ list.title }}</div>
+                    <div class="meta-row"><span>Activates: <b>{{ list.activates_str }}</b></span><span style="color:var(--gray);">Locked</span></div>
+                </div>
+            </div>
+        {% endfor %}
+    </details>
+    {% endif %}
+
+    <details class="cat-details cat-completed">
+        <summary>COMPLETED ({{ tasks.completed|length }}) <span class="material-icons">expand_more</span></summary>
+        {% for list in tasks.completed %}
+            <div class="task-card">
+                <details class="card-details">
+                    <summary class="card-summary">
+                        <div class="task-title" style="text-decoration:line-through; color:var(--gray);">{{ list.title }}</div>
+                        <div class="meta-row"><span style="color:var(--success);">✔ Completed</span><span>{{ list.duration }}</span></div>
+                    </summary>
+                    <div class="card-body" style="opacity:0.6;">
+                        {% for task in list.task_items %}
+                        {% set title = task.title if task.title is defined else task %}
+                        <div class="check-item">
+                            <div class="custom-check checked"><i class="material-icons">check</i></div>
+                            <div style="flex:1; font-size:13px; color:#64748b;">{{ title }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="audit-footer"><div class="audit-item"><i class="material-icons">play_circle</i> {{ list.start_time }}</div><div class="audit-item"><i class="material-icons">stop_circle</i> {{ list.end_time }}</div><div class="audit-item"><i class="material-icons">timer</i> {{ list.duration }}</div></div>
+                </details>
+            </div>
+        {% endfor %}
+    </details>
+
+    <div class="todo-section">
+        <div class="todo-header"><div style="font-weight: 800; font-size: 14px; color: var(--dark);"><span class="material-icons" style="font-size: 16px; vertical-align: middle; margin-right: 5px;">edit_note</span> My To-Do List</div><span style="font-size: 10px; background: #f1f5f9; padding: 2px 8px; border-radius: 4px; color: var(--gray);">Private</span></div>
+        <div class="todo-input-row"><input type="text" id="newTodo" class="todo-input" placeholder="Type a task..."><input type="datetime-local" id="todoDate" class="date-input"><button class="btn-add" onclick="addTodo()">ADD</button></div>
+        <ul class="todo-list">{% if todos|length == 0 %}<li style="padding: 20px; text-align: center; color: #cbd5e1; font-size: 12px; font-style: italic;">No active tasks</li>{% endif %}{% for t in todos %}<li class="todo-item" id="todo-{{ t.id }}"><div class="custom-check" style="width: 20px; height: 20px;" onclick="toggleTodo('{{ t.id }}', this)"><i class="material-icons" style="font-size: 14px;">check</i></div><div style="flex: 1;"><div class="todo-text">{{ t.task }}</div>{% if t.time_display and t.time_display != 'No Date' %}<div class="todo-meta">Due: {{ t.time_display }}</div>{% endif %}</div><span class="material-icons" style="color: #ef4444; font-size: 18px; cursor: pointer; opacity: 0.6;" onclick="deleteTodo('{{ t.id }}', this)">delete_outline</span></li>{% endfor %}</ul>
+    </div>
+
+    <details class="clock-details" style="margin-top:30px; background:none; border:none; box-shadow:none;"><summary style="background:none; color:#94a3b8; font-size:12px; font-weight:700; padding:0;">SHIFT SUMMARY <span class="material-icons">expand_less</span></summary><div style="background:white; border-radius:12px; padding:15px; margin-top:10px; border:1px solid #f1f5f9;"><div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px;"><span style="color:#64748b;">Completed</span><span style="font-weight:700;">{{ snapshot.completed_count }}</span></div><div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px;"><span style="color:#64748b;">Avg Time</span><span style="font-weight:700;">{{ snapshot.avg_time }}</span></div><div style="font-size:10px; color:#cbd5e1; text-align:right;">{{ current_date }}</div></div></details>
+
+</div>
+
+<div id="imgModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:200; align-items:center; justify-content:center;" onclick="this.style.display='none'"><img id="fullImg" style="max-width:90%; max-height:90%; border-radius:10px;"></div>
+
+<script>
+    setInterval(() => { const n=new Date(); document.getElementById('liveClock').innerText=n.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); }, 1000);
+
+    let sessionSec={{ stats.session_sec }}, workSec={{ stats.work_sec }}, breakSec={{ stats.break_sec }};
+    const status="{{ current_status }}";
+    const elWork=document.getElementById('workTimer'), elMini=document.getElementById('miniShiftTimer'), elSession=document.getElementById('sessionTimer'), elBreak=document.getElementById('breakTimer'), badge=document.getElementById('statusBadge');
+    const btnIn=document.getElementById('btnIn'), btnResume=document.getElementById('btnResume'), btnBreak=document.getElementById('btnBreak'), btnOut=document.getElementById('btnOut');
+
+    function fmt(s){const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return(h<10?"0"+h:h)+":"+(m<10?"0"+m:m)+":"+(sec<10?"0"+sec:sec);}
+    function fmtShort(s){const h=Math.floor(s/3600),m=Math.floor((s%3600)/60);return h+"h "+m+"m";}
+    function tick(){
+        if(status==='in'){sessionSec++;workSec++;}else if(status==='break'){sessionSec++;breakSec++;}
+        const t=fmt(workSec);
+        elWork.innerText=t;
+        elMini.innerText=t;
+        elSession.innerText=fmtShort(sessionSec); elBreak.innerText=fmtShort(breakSec);
+    }
+    setInterval(tick,1000);tick();
+
+    function updateButtons() {
+        btnIn.classList.add('hidden-btn'); btnResume.classList.add('hidden-btn'); btnBreak.classList.add('hidden-btn'); btnOut.classList.add('hidden-btn');
+        if(status==='out'){badge.innerText="OFF DUTY"; badge.className='status-pill status-out'; btnIn.classList.remove('hidden-btn');}
+        else if(status==='in'){badge.innerText="ON DUTY"; badge.className='status-pill status-in'; btnBreak.classList.remove('hidden-btn'); btnOut.classList.remove('hidden-btn');}
+        else if(status==='break'){badge.innerText="ON BREAK"; badge.className='status-pill status-break'; btnResume.classList.remove('hidden-btn');}
+    }
+    updateButtons();
+
+    function clockAction(act){ if(navigator.geolocation){ navigator.geolocation.getCurrentPosition(pos=>{ fetch('/api/clock',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:act,lat:pos.coords.latitude,lon:pos.coords.longitude})}).then(()=>location.reload()); }); } else alert("GPS Required"); }
+    function breakGuard(){ if(document.querySelectorAll('details[data-active="true"]').length > 0) { if(!confirm("⚠️ Active Checklist! Continue break?")) return; } clockAction('break_start'); }
+    function toggleCheck(id,div){ if(div.classList.contains('disabled'))return; const cb=document.getElementById(id); cb.checked=!cb.checked; if(cb.checked)div.classList.add('checked');else div.classList.remove('checked'); }
+    function photoCaptured(inp,id){ if(inp.files&&inp.files[0]){ const r=new FileReader(); r.onload=e=>{document.getElementById('img_'+id).src=e.target.result;document.getElementById('img_'+id).style.display='block';}; r.readAsDataURL(inp.files[0]); document.getElementById('lbl_'+id).classList.add('uploaded'); document.getElementById('txt_'+id).innerText="Changed"; document.getElementById('vis_'+id).classList.remove('disabled');document.getElementById('vis_'+id).classList.add('checked');document.getElementById('cb_'+id).checked=true; updateBar(id.split('_')[0]); } }
+    function showFullImage(img){document.getElementById('fullImg').src=img.src;document.getElementById('imgModal').style.display='flex';}
+    function updateBar(listId){ const form=document.getElementById('form_'+listId); const cbs=form.querySelectorAll('input[type="checkbox"]'); let c=0; cbs.forEach(cb=>{if(cb.checked)c++;}); const pct=Math.round((c/cbs.length)*100); form.closest('.task-card').querySelector('.progress-fill').style.width=pct+'%'; }
+    function submitForm(e,id){ e.preventDefault(); const btn=document.getElementById('btn_'+id); btn.innerText="Saving..."; btn.disabled=true; fetch('/api/submit_checklist',{method:'POST',body:new FormData(document.getElementById('form_'+id))}).then(r=>{if(r.ok){btn.innerText="Saved"; setTimeout(()=>location.reload(),1000);}else{btn.innerText="Retry";btn.disabled=false;}});}
+    function addTodo(){ const i=document.getElementById('newTodo'); const d=document.getElementById('todoDate'); if(!i.value.trim())return; const fd=new FormData(); fd.append('task',i.value); fd.append('due_date', d.value); fetch('/api/todo/add',{method:'POST',body:fd}).then(()=>location.reload()); }
+    function toggleTodo(id, el){ const fd=new FormData(); fd.append('id', id); fetch('/api/todo/toggle',{method:'POST',body:fd}); const li=el.closest('li'); li.style.opacity='0'; setTimeout(()=>li.remove(),500); }
+    function deleteTodo(id, el){ if(confirm('Delete?')){ const fd=new FormData(); fd.append('id', id); fetch('/api/todo/delete',{method:'POST',body:fd}); el.closest('li').remove(); } }
+
+    // UPDATED ACKNOWLEDGE LOGIC FOR DYNAMIC LISTS
+    function acknowledge(aid, btn) {
+        btn.innerText="Noted...";
+        const fd = new FormData(); fd.append('announcement_id', aid);
+        fetch('/api/acknowledge', {method:'POST', body:fd}).then(()=>{
+            const details = btn.closest('details');
+            details.removeAttribute('open');
+            // Visual feedback
+            details.querySelector('.ann-summary').classList.add('read');
+            const icon = details.querySelector('.ann-summary span.material-icons');
+            if(icon) icon.innerText = 'notifications_none';
+            const text = details.querySelector('.ann-summary span:last-child');
+            if(text) text.innerText = 'Update';
+            btn.remove();
+        });
+    }
+</script>
+</body>
+</html>

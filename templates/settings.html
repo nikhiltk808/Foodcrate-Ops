@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zion Settings</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+
+    <style>
+        :root { --primary: {{ theme.primary }}; --bg: {{ theme.bg }}; --card: {{ theme.card }}; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; color: #333; }
+        .container { max-width: 900px; margin: 0 auto; }
+        .header { display: flex; align-items: center; margin-bottom: 20px; }
+        .back-btn { text-decoration: none; color: #666; font-weight: bold; display: flex; align-items: center; margin-right: 15px; }
+
+        .card { background: var(--card); padding: 25px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        .card h2 { margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 15px; font-size: 18px; color: var(--primary); display: flex; align-items: center; gap: 10px; }
+
+        /* MAP */
+        #map { height: 350px; width: 100%; border-radius: 10px; margin-top: 15px; border: 2px solid #eee; }
+
+        /* FORMS */
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; }
+        .form-control { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+        .row { display: flex; gap: 15px; }
+
+        /* BUTTONS */
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; display: inline-flex; align-items: center; gap: 5px; color: white; text-decoration: none; transition: 0.2s; }
+        .btn-primary { background: var(--primary); }
+        .btn-outline { background: white; border: 2px solid var(--primary); color: var(--primary); }
+        .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+        /* LIST ITEMS */
+        .list-item { background: #f9fafb; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .tag { background: #e5e7eb; padding: 3px 8px; border-radius: 10px; font-size: 11px; color: #555; text-transform: uppercase; }
+
+        /* EDITOR STYLES (NEW) */
+        .task-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+        .task-input { flex-grow: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+        .remove-task { color: #ef4444; cursor: pointer; font-size: 20px; }
+
+        /* MODAL */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000; }
+        .modal-content { background: white; padding: 25px; border-radius: 15px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <a href="/" class="back-btn"><span class="material-icons">arrow_back</span> Dashboard</a>
+        <h1 style="margin:0; font-size: 24px;">System Settings</h1>
+    </div>
+
+    <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h2><span class="material-icons">map</span> Restaurant Location</h2>
+            <button type="button" id="locateBtn" class="btn btn-outline" style="padding: 8px 15px;">
+                <span class="material-icons">my_location</span> Locate Me
+            </button>
+        </div>
+        <p style="color:#666; font-size:14px;">Drag the blue pin to your exact restaurant entrance.</p>
+        <div id="map"></div>
+        <div style="margin-top:20px;">
+            <div class="row">
+                <div class="form-group" style="flex:1;"><label>Latitude</label><input type="text" id="lat" class="form-control" value="{{ config.lat }}" readonly style="background:#f3f4f6;"></div>
+                <div class="form-group" style="flex:1;"><label>Longitude</label><input type="text" id="lon" class="form-control" value="{{ config.lon }}" readonly style="background:#f3f4f6;"></div>
+                <div class="form-group" style="flex:1;"><label>Radius (m)</label><input type="number" id="radius" class="form-control" value="{{ config.rad }}"></div>
+            </div>
+            <div style="text-align:right;"><button type="button" onclick="saveLocationAjax()" class="btn btn-primary">Save Location</button></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding-bottom:15px; margin-bottom:15px;">
+            <h2 style="border:none; margin:0;"><span class="material-icons">people</span> Team Members</h2>
+            <button onclick="openUserModal()" class="btn btn-primary btn-sm">+ Add Staff</button>
+        </div>
+        {% for u in users %}
+        <div class="list-item">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div style="background:var(--primary); color:white; width:35px; height:35px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold;">{{ u.name[0] }}</div>
+                <div><strong style="display:block;">{{ u.name }}</strong><span class="tag">{{ u.role }}</span> <span class="tag">{{ u.department }}</span></div>
+            </div>
+            {% if u.id != session['user_id'] %}
+            <a href="/api/delete_user/{{ u.id }}" onclick="return confirm('Remove {{ u.name }}?')" style="color:#ef4444;"><span class="material-icons">delete</span></a>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding-bottom:15px; margin-bottom:15px;">
+            <h2 style="border:none; margin:0;"><span class="material-icons">fact_check</span> Checklists</h2>
+            <button onclick="openEditor()" class="btn btn-primary btn-sm">+ New List</button>
+        </div>
+        {% for list in checklists %}
+        <div class="list-item">
+            <div><strong>{{ list.title }}</strong> <span class="tag">{{ list.frequency }}</span></div>
+            <div style="display:flex; gap:10px;">
+                <button onclick='editList({{ list|tojson }})' class="btn btn-outline btn-sm" style="border:1px solid #ddd; color:#555;">
+                    <span class="material-icons" style="font-size:16px;">edit</span>
+                </button>
+                <a href="/api/delete_checklist/{{ list.id }}" onclick="return confirm('Delete?')" style="color:#ef4444;"><span class="material-icons">delete</span></a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div id="userModal" class="modal">
+    <div class="modal-content">
+        <h3>Add Staff</h3>
+        <form action="/api/add_user" method="POST">
+            <input type="text" name="name" class="form-control" placeholder="Name" required style="margin-bottom:10px;">
+            <input type="text" name="pin" class="form-control" placeholder="PIN" required style="margin-bottom:10px;">
+            <select name="role" class="form-control" style="margin-bottom:10px;"><option value="staff">Staff</option><option value="manager">Manager</option></select>
+            <select name="dept" class="form-control" style="margin-bottom:10px;"><option value="Kitchen">Kitchen</option><option value="Service">Service</option></select>
+            <button type="submit" class="btn btn-primary" style="width:100%">Add</button>
+            <button type="button" onclick="closeUserModal()" class="btn" style="width:100%; margin-top:5px; background:#eee; color:#333;">Cancel</button>
+        </form>
+    </div>
+</div>
+
+<div id="editorModal" class="modal">
+    <div class="modal-content" style="max-width:600px;">
+        <h3 id="editorTitle">Create/Edit Checklist</h3>
+        <form id="checklistForm" action="/api/save_checklist" method="POST" onsubmit="prepareTasks()">
+            <input type="hidden" name="list_id" id="list_id">
+            <input type="hidden" name="tasks_json" id="tasks_json">
+            <input type="hidden" name="assigned_to" value="all">
+
+            <div class="row">
+                <div class="form-group" style="flex:2;">
+                    <label>List Title</label>
+                    <input type="text" name="title" id="list_title" class="form-control" required placeholder="e.g. Closing Duties">
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label>Start Time</label>
+                    <input type="time" name="trigger_time" id="trigger_time" class="form-control" value="09:00">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Frequency</label>
+                <select name="frequency" id="frequency" class="form-control">
+                    <option value="Daily">Daily</option>
+                    <option value="Weekly">Weekly</option>
+                    <option value="One-Time">One-Time</option>
+                </select>
+            </div>
+
+            <label>Tasks</label>
+            <div id="taskContainer" style="background:#f9f9f9; padding:10px; border-radius:8px; margin-bottom:15px; max-height:200px; overflow-y:auto;">
+                </div>
+
+            <button type="button" onclick="addTaskRow('')" class="btn btn-outline btn-sm" style="width:100%; margin-bottom:15px; border-style:dashed;">+ Add Task</button>
+
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+                <button type="button" onclick="closeEditor()" class="btn" style="background:#eee; color:#333;">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Checklist</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+    // --- MAP LOGIC (UNCHANGED & WORKING) ---
+    var startLat = {{ config.lat }};
+    var startLon = {{ config.lon }};
+    if(startLat == 0) { startLat = 12.9716; startLon = 77.5946; }
+
+    var map = L.map('map').setView([startLat, startLon], 16);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+    var marker = L.marker([startLat, startLon], {draggable: true}).addTo(map);
+
+    marker.on('dragend', function(event) {
+        var position = marker.getLatLng();
+        document.getElementById('lat').value = position.lat.toFixed(6);
+        document.getElementById('lon').value = position.lng.toFixed(6);
+    });
+
+    document.getElementById('locateBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        this.innerHTML = "Locating...";
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                var lat = position.coords.latitude;
+                var lon = position.coords.longitude;
+                marker.setLatLng([lat, lon]);
+                map.setView([lat, lon], 18);
+                document.getElementById('lat').value = lat.toFixed(6);
+                document.getElementById('lon').value = lon.toFixed(6);
+                document.getElementById('locateBtn').innerHTML = '<span class="material-icons">my_location</span> Locate Me';
+            }, function() { alert("GPS Access Denied"); });
+        } else { alert("GPS Not Supported"); }
+    });
+
+    function saveLocationAjax() {
+        const formData = new FormData();
+        formData.append('office_lat', document.getElementById('lat').value);
+        formData.append('office_lon', document.getElementById('lon').value);
+        formData.append('radius', document.getElementById('radius').value);
+
+        fetch('/api/save_system_settings', { method: 'POST', body: formData })
+        .then(response => { if (response.ok) alert("✅ Location Saved!"); else alert("❌ Error saving."); })
+        .catch(error => { alert("❌ Network Error."); });
+    }
+
+    // --- NEW: SMART CHECKLIST EDITOR ---
+    function openEditor() {
+        document.getElementById('editorModal').style.display = 'flex';
+        document.getElementById('checklistForm').reset();
+        document.getElementById('list_id').value = ''; // Empty ID means create new
+        document.getElementById('editorTitle').innerText = "Create New Checklist";
+        document.getElementById('taskContainer').innerHTML = '';
+        addTaskRow(''); // Start with one empty row
+    }
+
+    function editList(listData) {
+        document.getElementById('editorModal').style.display = 'flex';
+        document.getElementById('editorTitle').innerText = "Edit Checklist";
+
+        // Populate fields
+        document.getElementById('list_id').value = listData.id;
+        document.getElementById('list_title').value = listData.title;
+        document.getElementById('trigger_time').value = listData.trigger_time;
+
+        // Simple Frequency logic (handles "Weekly:Monday" vs "Weekly")
+        let freq = listData.frequency.split(':')[0];
+        document.getElementById('frequency').value = freq;
+
+        // Clear and Repopulate Tasks
+        const container = document.getElementById('taskContainer');
+        container.innerHTML = '';
+
+        let tasks = [];
+        try { tasks = JSON.parse(listData.tasks); } catch(e) { tasks = []; }
+
+        // Handle both old formats (String) and new formats (Objects)
+        tasks.forEach(t => {
+            let val = (typeof t === 'string') ? t : t.title;
+            addTaskRow(val);
+        });
+
+        if(tasks.length === 0) addTaskRow('');
+    }
+
+    function addTaskRow(value) {
+        const div = document.createElement('div');
+        div.className = 'task-row';
+        div.innerHTML = `
+            <input type="text" class="task-input" value="${value}" placeholder="Enter task..." required>
+            <span class="material-icons remove-task" onclick="this.parentElement.remove()">remove_circle</span>
+        `;
+        document.getElementById('taskContainer').appendChild(div);
+    }
+
+    // Before submitting, we gather all inputs into a JSON string
+    function prepareTasks() {
+        const inputs = document.querySelectorAll('.task-input');
+        let taskList = [];
+        inputs.forEach(input => {
+            if(input.value.trim() !== "") {
+                taskList.push(input.value.trim());
+            }
+        });
+        document.getElementById('tasks_json').value = JSON.stringify(taskList);
+    }
+
+    function closeEditor() { document.getElementById('editorModal').style.display = 'none'; }
+    function openUserModal() { document.getElementById('userModal').style.display = 'flex'; }
+    function closeUserModal() { document.getElementById('userModal').style.display = 'none'; }
+</script>
+
+</body>
+</html>

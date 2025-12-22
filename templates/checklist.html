@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Zion Ops - Checklist</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: sans-serif; background: #f4f4f9; padding: 20px; margin: 0; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #333; }
+        .tab-btn { width: 48%; padding: 10px; cursor: pointer; border: none; background: #ddd; font-size: 16px; }
+        .tab-btn.active { background: #007bff; color: white; }
+        .task-list { margin-top: 20px; }
+        .task-item { padding: 15px; border-bottom: 1px solid #eee; display: flex; align-items: center; flex-wrap: wrap; }
+        .task-item input[type="checkbox"] { transform: scale(1.5); margin-right: 15px; }
+        .btn { display: block; width: 100%; padding: 15px; background: #28a745; color: white; border: none; border-radius: 5px; font-size: 18px; margin-top: 20px; cursor: pointer; }
+        .back-link { display: block; text-align: center; margin-top: 15px; text-decoration: none; color: #666; }
+
+        /* Hidden by default */
+        .checklist-section { display: none; }
+        /* Show when active */
+        .checklist-section.active { display: block; }
+    </style>
+    <script>
+        function openTab(tabName) {
+            // Hide all sections
+            document.getElementById('Opening').style.display = 'none';
+            document.getElementById('Closing').style.display = 'none';
+            // Show selected
+            document.getElementById(tabName).style.display = 'block';
+            // Update hidden input so backend knows which list we are submitting
+            document.getElementById('checklist_type_input').value = tabName;
+        }
+    </script>
+</head>
+<body>
+
+<div class="container">
+    <h2>Daily Checklists</h2>
+
+    <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+        <button class="tab-btn" onclick="openTab('Opening')">☀️ Opening</button>
+        <button class="tab-btn" onclick="openTab('Closing')">🌙 Closing</button>
+    </div>
+
+    <form method="POST" action="/checklist" enctype="multipart/form-data">
+        <input type="hidden" name="checklist_type" id="checklist_type_input" value="Opening">
+
+        <div id="Opening" class="checklist-section" style="display:block;">
+            {% for task in tasks['Opening'] %}
+            <div class="task-item">
+                <div style="display:flex; align-items:center; width:100%;">
+                    <input type="checkbox" name="tasks" value="{{ task }}" id="{{ task }}"
+                    {% if task in completed %} checked disabled {% endif %}>
+                    <label for="{{ task }}" style="flex-grow:1;">{{ task }}</label>
+                </div>
+
+                {% if task not in completed %}
+                <div style="margin-left: 35px; margin-top: 5px; width: 100%;">
+                    <small style="color:#666;">📸 Add Proof (Optional):</small>
+                    <input type="file" name="{{ task }}" accept="image/*" style="font-size: 14px;">
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <div id="Closing" class="checklist-section">
+            {% for task in tasks['Closing'] %}
+            <div class="task-item">
+                <div style="display:flex; align-items:center; width:100%;">
+                    <input type="checkbox" name="tasks" value="{{ task }}" id="{{ task }}_close"
+                    {% if task in completed %} checked disabled {% endif %}>
+                    <label for="{{ task }}_close" style="flex-grow:1;">{{ task }}</label>
+                </div>
+
+                {% if task not in completed %}
+                <div style="margin-left: 35px; margin-top: 5px; width: 100%;">
+                    <small style="color:#666;">📸 Add Proof (Optional):</small>
+                    <input type="file" name="{{ task }}" accept="image/*" style="font-size: 14px;">
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <button type="submit" class="btn">Save Checklist</button>
+    </form>
+
+    <a href="/dashboard" class="back-link">← Back to Dashboard</a>
+</div>
+
+</body>
+</html>
