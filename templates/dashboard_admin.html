@@ -117,7 +117,9 @@
                         <!-- Clock icon (click to view shift activity) -->
                         <div class="btn-history" style="cursor:pointer;" onclick="showActivity('{{ s.id }}', '{{ s.name }}')"><span class="material-icons" style="font-size:18px;">schedule</span></div>
                         <div class="avatar">{{ s.name[0] }}</div>
-                        <div class="staff-name">{{ s.name }}</div>
+                        <a href="/staff/{{ s.id }}" style="text-decoration: none; color: inherit;">
+                            <div class="staff-name" style="cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='inherit'">{{ s.name }}</div>
+                        </a>
                         <div class="staff-dept">{{ s.dept }}</div>
                         <div class="status-badge status-{{ s.color }}">{{ s.status }}</div>
                         <div class="shift-timer" data-ms="{{ s.duration_ms }}" data-active="{{ 'true' if s.is_active else 'false' }}">00:00:00</div>
@@ -321,6 +323,53 @@ async function pollLiveStaff(){
   } catch (e) {
     console.error('live poll failed', e);
   }
+}
+
+async function showActivity(userId, userName) {
+  const modal = document.getElementById('activityModal');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalBody = document.getElementById('modalBody');
+  
+  modalTitle.innerText = `${userName} - Activity Log`;
+  modalBody.innerHTML = '<div style="padding:20px; text-align:center; color:#94a3b8;">Loading...</div>';
+  modal.style.display = 'flex';
+  
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const date = urlParams.get('date') || new Date().toISOString().split('T')[0];
+    const res = await fetch(`/admin/get_user_activity/${userId}?date=${date}`);
+    if (!res.ok) throw new Error('Failed to fetch activity');
+    const logs = await res.json();
+    
+    if (logs.length === 0) {
+      modalBody.innerHTML = '<div style="padding:20px; text-align:center; color:#94a3b8;">No activity recorded for this date.</div>';
+      return;
+    }
+    
+    let html = '';
+    logs.forEach(log => {
+      html += `<div class="log-item">
+        <div><span class="log-date">${log.date || ''}</span><span class="log-action">${log.action || ''}</span></div>
+        <span class="log-time">${log.time || ''}</span>
+      </div>`;
+    });
+    modalBody.innerHTML = html;
+  } catch (e) {
+    modalBody.innerHTML = '<div style="padding:20px; text-align:center; color:#ef4444;">Error loading activity</div>';
+    console.error('Error fetching activity:', e);
+  }
+}
+
+function cloneDuty(title, date, time, content) {
+  document.getElementById('duty_title').value = title;
+  document.getElementById('duty_date').value = date;
+  document.getElementById('duty_time').value = time;
+  document.getElementById('duty_content').value = content;
+}
+
+function cloneAnn(title, message) {
+  document.getElementById('ann_title').value = title;
+  document.getElementById('ann_message').value = message;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
