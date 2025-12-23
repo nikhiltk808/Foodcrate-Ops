@@ -40,6 +40,8 @@
 
         .avatar { width: 50px; height: 50px; background: #eef2ff; border-radius: 50%; margin: 5px auto 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--primary); font-size: 18px; }
         .staff-name { font-weight: 700; font-size: 14px; margin-bottom: 2px; }
+        .staff-name-link { cursor: pointer; transition: color 0.2s; }
+        .staff-name-link:hover { color: var(--primary); }
         .staff-dept { font-size: 10px; color: #94a3b8; text-transform: uppercase; font-weight: 700; margin-bottom: 10px; }
         .status-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; margin-bottom: 8px; }
         .status-green { background: #dcfce7; color: #166534; } .status-orange { background: #fef3c7; color: #92400e; } .status-gray { background: #f1f5f9; color: #64748b; }
@@ -118,7 +120,7 @@
                         <div class="btn-history" style="cursor:pointer;" onclick="showActivity('{{ s.id }}', '{{ s.name }}')"><span class="material-icons" style="font-size:18px;">schedule</span></div>
                         <div class="avatar">{{ s.name[0] }}</div>
                         <a href="/staff/{{ s.id }}" style="text-decoration: none; color: inherit;">
-                            <div class="staff-name" style="cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='inherit'">{{ s.name }}</div>
+                            <div class="staff-name staff-name-link">{{ s.name }}</div>
                         </a>
                         <div class="staff-dept">{{ s.dept }}</div>
                         <div class="status-badge status-{{ s.color }}">{{ s.status }}</div>
@@ -346,14 +348,30 @@ async function showActivity(userId, userName) {
       return;
     }
     
-    let html = '';
+    // Clear previous content
+    modalBody.innerHTML = '';
     logs.forEach(log => {
-      html += `<div class="log-item">
-        <div><span class="log-date">${log.date || ''}</span><span class="log-action">${log.action || ''}</span></div>
-        <span class="log-time">${log.time || ''}</span>
-      </div>`;
+      const logItem = document.createElement('div');
+      logItem.className = 'log-item';
+      
+      const logDetails = document.createElement('div');
+      const logDate = document.createElement('span');
+      logDate.className = 'log-date';
+      logDate.textContent = log.date || '';
+      const logAction = document.createElement('span');
+      logAction.className = 'log-action';
+      logAction.textContent = log.action || '';
+      logDetails.appendChild(logDate);
+      logDetails.appendChild(logAction);
+      
+      const logTime = document.createElement('span');
+      logTime.className = 'log-time';
+      logTime.textContent = log.time || '';
+      
+      logItem.appendChild(logDetails);
+      logItem.appendChild(logTime);
+      modalBody.appendChild(logItem);
     });
-    modalBody.innerHTML = html;
   } catch (e) {
     modalBody.innerHTML = '<div style="padding:20px; text-align:center; color:#ef4444;">Error loading activity</div>';
     console.error('Error fetching activity:', e);

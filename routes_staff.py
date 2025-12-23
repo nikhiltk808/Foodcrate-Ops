@@ -48,6 +48,7 @@ def dashboard(route_user_id):
     active_anns = c.execute("SELECT * FROM announcements WHERE is_active=1 ORDER BY created_at DESC").fetchall()
     
     # Optimize: Fetch all acknowledgments for this user in one query
+    # NOTE: For best performance, ensure there is an index on acknowledgments(user_id, announcement_id)
     ack_rows = c.execute("SELECT announcement_id FROM acknowledgments WHERE user_id=?", (route_user_id,)).fetchall()
     acknowledged_ids = {row['announcement_id'] for row in ack_rows}
     
@@ -120,6 +121,7 @@ def dashboard(route_user_id):
     rows = c.execute("SELECT * FROM checklists").fetchall()
     
     # Optimize: Fetch all pending requests for this user in one query
+    # NOTE: For best performance, ensure there is an index on requests(user_id, status)
     req_rows = c.execute("SELECT checklist_id FROM requests WHERE user_id=? AND status='PENDING'", (route_user_id,)).fetchall()
     pending_request_ids = {row['checklist_id'] for row in req_rows}
 
