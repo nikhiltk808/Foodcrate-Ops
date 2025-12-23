@@ -1,10 +1,14 @@
 from flask import Blueprint, render_template, session, redirect, url_for
 from datetime import datetime, timedelta
 import json
+import logging
 import database as db
 import helpers as h
 
 staff_bp = Blueprint('staff', __name__)
+
+# Configure logging for better error tracking
+logger = logging.getLogger(__name__)
 
 @staff_bp.route('/staff/<int:route_user_id>')
 def dashboard(route_user_id):
@@ -28,7 +32,8 @@ def dashboard(route_user_id):
             if datetime.strptime(last['timestamp'][:19], '%Y-%m-%d %H:%M:%S') >= shift_start:
                 if last['action'] in ['in', 'break_end']: current_status = 'in'
                 elif last['action'] == 'break_start': current_status = 'break'
-        except: pass
+        except (ValueError, TypeError, KeyError):
+            logger.warning(f"Error parsing attendance timestamp: invalid format")
 
     # 3. STATS & LOGS
     stats = h.calculate_shift_stats(route_user_id)
@@ -41,13 +46,18 @@ def dashboard(route_user_id):
     # 4. BANNERS (UPDATED FOR MULTIPLE ITEMS)
     # Fetch ALL active announcements
     active_anns = c.execute("SELECT * FROM announcements WHERE is_active=1 ORDER BY created_at DESC").fetchall()
+    
+    # Optimize: Fetch all acknowledgments for this user in one query
+    # NOTE: For best performance, ensure there is an index on acknowledgments(user_id, announcement_id)
+    ack_rows = c.execute("SELECT announcement_id FROM acknowledgments WHERE user_id=?", (route_user_id,)).fetchall()
+    acknowledged_ids = {row['announcement_id'] for row in ack_rows}
+    
     updates = []
     for a in active_anns:
         item = dict(a)
         if item['meta_info']: item['meta_list'] = item['meta_info'].split('|')
-        # Check read status per item
-        ack = c.execute("SELECT 1 FROM acknowledgments WHERE user_id=? AND announcement_id=?", (route_user_id, item['id'])).fetchone()
-        item['is_read'] = True if ack else False
+        # Check read status using the pre-fetched set
+        item['is_read'] = item['id'] in acknowledged_ids
         updates.append(item)
 
     # Fetch ALL active duties
@@ -58,7 +68,10 @@ def dashboard(route_user_id):
         try:
             item['lines'] = item['content'].split('\n')
             item['reporting_time'] = item.get('reporting_time', '00:00')
-        except: pass
+        except (AttributeError, KeyError):
+            logger.warning(f"Error parsing duty content: missing or invalid field")
+            item['lines'] = []
+            item['reporting_time'] = '00:00'
         duties.append(item)
 
     # 5. TO-DOS
@@ -71,10 +84,13 @@ def dashboard(route_user_id):
                 try:
                     dt = datetime.strptime(item['due_date'], '%Y-%m-%dT%H:%M')
                     item['time_display'] = dt.strftime('%d %b, %I:%M %p')
-                except: item['time_display'] = item['due_date']
+                except (ValueError, TypeError):
+                    logger.warning(f"Error parsing due_date: invalid date format")
+                    item['time_display'] = item['due_date']
             else: item['time_display'] = "No Date"
             todos.append(item)
-    except: pass
+    except Exception:
+        logger.error(f"Error fetching todos: database query failed")
 
     # 6. CHECKLISTS (CATEGORIZED)
     saved = {}; attempts = {}; audit = {}; durations = []
@@ -93,7 +109,8 @@ def dashboard(route_user_id):
         for cid, a in audit.items():
             ts = sorted(a['timestamps'])
             if len(ts) > 1: durations.append((ts[-1] - ts[0]).total_seconds() / 60)
-    except: pass
+    except Exception:
+        logger.error(f"Error processing checklist logs: database query or data processing failed")
 
     snapshot = {'avg_time': f"{int(sum(durations)/len(durations))}m" if durations else "-", 'completed_count': len(durations)}
 
@@ -102,6 +119,11 @@ def dashboard(route_user_id):
     task_groups = {'active': [], 'upcoming': [], 'completed': [], 'quick': []}
 
     rows = c.execute("SELECT * FROM checklists").fetchall()
+    
+    # Optimize: Fetch all pending requests for this user in one query
+    # NOTE: For best performance, ensure there is an index on requests(user_id, status)
+    req_rows = c.execute("SELECT checklist_id FROM requests WHERE user_id=? AND status='PENDING'", (route_user_id,)).fetchall()
+    pending_request_ids = {row['checklist_id'] for row in req_rows}
 
     for r in rows:
         assigns = str(r['assigned_to']).split(',') if r['assigned_to'] else ['all']
@@ -129,10 +151,12 @@ def dashboard(route_user_id):
                     item['sort_val'] = delta
                     left = (exp_dt - now).total_seconds()
                     if left > 0 and left < 5400: item['minutes_left'] = int(left // 60)
-                except: item['priority']='Low'; item['sort_val']=999; item['activates_str']=r['trigger_time']
+                except (ValueError, TypeError, AttributeError, IndexError):
+                    logger.warning(f"Error parsing trigger_time: invalid time format")
+                    item['priority']='Low'; item['sort_val']=999; item['activates_str']=r['trigger_time']
 
-                req = c.execute("SELECT status FROM requests WHERE user_id=? AND checklist_id=? AND status='PENDING'", (route_user_id, r['id'])).fetchone()
-                item['refill_pending'] = True if req else False
+                # Check refill status using the pre-fetched set
+                item['refill_pending'] = r['id'] in pending_request_ids
 
                 ts_list = sorted(audit.get(r['id'], {'timestamps':[]})['timestamps'])
                 if ts_list:
@@ -155,7 +179,8 @@ def dashboard(route_user_id):
                 elif item['status'] in ['ACTIVE', 'ACTIVE_PARTIAL']: task_groups['active'].append(item)
                 else: task_groups['upcoming'].append(item)
 
-            except: pass
+            except Exception:
+                logger.error(f"Error processing checklist item: invalid data structure")
     conn.close()
 
     sorter = lambda x: ({'High':0, 'Medium':1, 'Low':2}.get(x.get('priority'), 2), x.get('sort_val', 999))
