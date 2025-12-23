@@ -332,7 +332,8 @@ async function showActivity(userId, userName) {
   const modalTitle = document.getElementById('modalTitle');
   const modalBody = document.getElementById('modalBody');
   
-  modalTitle.innerText = `${userName} - Activity Log`;
+  // Use textContent for security
+  modalTitle.textContent = userName + ' - Activity Log';
   modalBody.innerHTML = '<div style="padding:20px; text-align:center; color:#94a3b8;">Loading...</div>';
   modal.style.display = 'flex';
   

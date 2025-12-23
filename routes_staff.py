@@ -33,7 +33,7 @@ def dashboard(route_user_id):
                 if last['action'] in ['in', 'break_end']: current_status = 'in'
                 elif last['action'] == 'break_start': current_status = 'break'
         except (ValueError, TypeError, KeyError) as e:
-            logger.warning(f"Error parsing timestamp for user {route_user_id}: {e}")
+            logger.warning(f"Error parsing attendance timestamp: invalid format")
 
     # 3. STATS & LOGS
     stats = h.calculate_shift_stats(route_user_id)
@@ -69,7 +69,7 @@ def dashboard(route_user_id):
             item['lines'] = item['content'].split('\n')
             item['reporting_time'] = item.get('reporting_time', '00:00')
         except (AttributeError, KeyError) as e:
-            logger.warning(f"Error parsing duty content for duty {item.get('id')}: {e}")
+            logger.warning(f"Error parsing duty content: missing or invalid field")
             item['lines'] = []
             item['reporting_time'] = '00:00'
         duties.append(item)
@@ -85,12 +85,12 @@ def dashboard(route_user_id):
                     dt = datetime.strptime(item['due_date'], '%Y-%m-%dT%H:%M')
                     item['time_display'] = dt.strftime('%d %b, %I:%M %p')
                 except (ValueError, TypeError) as e:
-                    logger.warning(f"Error parsing due_date for todo {item.get('id')}: {e}")
+                    logger.warning(f"Error parsing due_date: invalid date format")
                     item['time_display'] = item['due_date']
             else: item['time_display'] = "No Date"
             todos.append(item)
     except Exception as e:
-        logger.error(f"Error fetching todos for user {route_user_id}: {e}")
+        logger.error(f"Error fetching todos: database query failed")
 
     # 6. CHECKLISTS (CATEGORIZED)
     saved = {}; attempts = {}; audit = {}; durations = []
@@ -110,7 +110,7 @@ def dashboard(route_user_id):
             ts = sorted(a['timestamps'])
             if len(ts) > 1: durations.append((ts[-1] - ts[0]).total_seconds() / 60)
     except Exception as e:
-        logger.error(f"Error processing checklist logs for user {route_user_id}: {e}")
+        logger.error(f"Error processing checklist logs: database query or data processing failed")
 
     snapshot = {'avg_time': f"{int(sum(durations)/len(durations))}m" if durations else "-", 'completed_count': len(durations)}
 
@@ -152,7 +152,7 @@ def dashboard(route_user_id):
                     left = (exp_dt - now).total_seconds()
                     if left > 0 and left < 5400: item['minutes_left'] = int(left // 60)
                 except (ValueError, TypeError, AttributeError, IndexError) as e:
-                    logger.warning(f"Error parsing trigger_time for checklist {r['id']}: {e}")
+                    logger.warning(f"Error parsing trigger_time: invalid time format")
                     item['priority']='Low'; item['sort_val']=999; item['activates_str']=r['trigger_time']
 
                 # Check refill status using the pre-fetched set
@@ -180,7 +180,7 @@ def dashboard(route_user_id):
                 else: task_groups['upcoming'].append(item)
 
             except Exception as e:
-                logger.error(f"Error processing checklist item {r['id']}: {e}")
+                logger.error(f"Error processing checklist item: invalid data structure")
     conn.close()
 
     sorter = lambda x: ({'High':0, 'Medium':1, 'Low':2}.get(x.get('priority'), 2), x.get('sort_val', 999))
